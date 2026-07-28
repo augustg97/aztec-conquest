@@ -1,6 +1,9 @@
-# Research — {{SUBJECT}} knowledge base for Aztec Conquest
+# Research — conquest-of-Mexico knowledge base for Aztec Conquest
 
-**Started 2026-07-27.** A standing research programme and expert system covering {{DOMAINS}}.
+**Started 2026-07-27.** A standing research programme and expert system covering the Basin of
+Mexico c. 1519 (terrain, lakes, hydraulic works), the Triple Alliance tributary system, the
+altepetl network, the 1519–21 campaign and its sources, the epidemic, and the 1521–50
+aftermath.
 
 **This folder does not change the model.** Nothing here is imported by `build/`. Its output is
 *evidence and models* that inform continuous updates to the app — so that when a number, a
@@ -16,7 +19,12 @@ Research/
 ├── SOURCE-SURVEY.md              what data exists, in what frame, under what licence
 ├── MODEL-GAPS.md                 the register that ties research to app defects
 ├── research/                     evidence: dossiers per domain, with sources and caution flags
-│   ├── 01-{{DOMAIN}}/
+│   ├── 01-basin-and-lakes/       terrain, lake system, hydraulic works, chinampas
+│   ├── 02-tributary-system/      provinces, tribute, how and when each altepetl entered
+│   ├── 03-the-campaign/          the dated itinerary and the events, per source
+│   ├── 04-the-sources/           each chronicle's vantage, motive and reliability
+│   ├── 05-epidemic/              introduction, spread, the mortality debate
+│   ├── 06-aftermath-1521-50/     encomienda, congregación, drainage, continued campaigns
 │   └── 09-source-documents/      fetched primary material, kept verbatim
 ├── research reports/             illustrated white papers, each ending in actions
 │   └── STAGED-CHANGES.md         the handover surface
@@ -26,6 +34,9 @@ Research/
     └── collected/                third-party + MANIFEST.json (licence + review verdict)
 ```
 
+*(Dossier folders are created as their round produces them; 01 and 09 exist from the scaffold —
+rename/extend to the scheme above as content lands.)*
+
 ---
 
 ## The models
@@ -33,12 +44,14 @@ Research/
 All runnable, all self-testing. Each prints a worked demonstration.
 
 ```bash
-cd Research/modeling && python {{MODULE}}.py
+cd Research/modeling && python3 <module>.py
 ```
 
 | module | what it is | current state |
 |---|---|---|
-| | | selftest passes |
+| `calendar.py` *(planned, A1)* | Julian ↔ Gregorian ↔ xiuhpohualli/tonalpohualli, correlation constant explicit | not yet built |
+| `georef.py` *(planned, A2)* | control points + residuals for the 1524 map and the lake reconstruction | not yet built |
+| `allegiance.py` *(planned, B2)* | the per-altepetl state machine | not yet built |
 
 ## The audits
 
@@ -46,19 +59,21 @@ Read-only; they change nothing.
 
 | script | catches | current result |
 |---|---|---|
-| | | |
+| `audit_all.py` | runner (scaffolded) | no audits registered yet |
+| card audit *(planned, C1)* | a contested claim stated flatly; missing `accounts:`; era gaps | not yet built |
+| witness audit *(planned, E1)* | causeways/aqueducts/lake/footprint vs archaeology | not yet built |
 
 ## The dossiers
 
 | file | covers |
 |---|---|
-| | |
+| *(none yet — round 1 opens 01, 02, 03, 04)* | |
 
 ## The white papers
 
 | paper | thesis |
 |---|---|
-| | |
+| *(planned, round 1)* "The conquest had more participants than the story does" | the force-composition question, measured, with what each source claims and why each would claim it |
 
 ---
 
@@ -78,11 +93,31 @@ Read-only; they change nothing.
 
 ## Status
 
-**{{VERSION}}, 2026-07-27.**
+**v0 (kickoff), 2026-07-27.**
 
-*Round {{N}}* — {{WHAT_IT_PRODUCED}}
+*Round 0 (kickoff)* — scope adopted from the Studio's worked example; source survey done
+(all P1 sources confirmed to exist digitally, licences flagged for verification); scaffold
+running and visually verified; gap register seeded with 9 items.
 
-All selftests pass. See [`MODEL-GAPS.md`](MODEL-GAPS.md) for the **{{N}} open items**,
-{{N_P1}} at P1.
+No models or audits exist yet. See [`MODEL-GAPS.md`](MODEL-GAPS.md) for the **9 open items,
+6 at P1**.
 
-**Next round, in priority order:** {{NEXT}}
+**Round 1, in priority order:**
+
+1. **A1 `calendar.py`** — the frame decision as code, with selftest; every authored date tagged
+   with its source system. *Do this before authoring a single dated event.*
+2. **A2 georeference** the chosen lake reconstruction and the 1524 Nuremberg map; record the
+   residuals. Everything spatial rests on this — and round 1 must **name** the canonical lake
+   reconstruction (SOURCE-SURVEY §1 lists the candidates).
+3. **B1 the altepetl gazetteer** — name (Nahuatl/Spanish/modern), coordinates, tribute
+   province, date and manner of entry into the tributary system, confidence. The model's spine.
+4. **B2 the allegiance state machine** with its selftest — the layer that makes this a model.
+5. **C1 the `accounts:` schema** + "What the sources say" card section + the card audit that
+   fails on a flatly-stated contested claim.
+6. **E1 the archaeological witness audit** — score asserted causeways, aqueducts, lake extent
+   and city footprint against Templo Mayor / survey literature *before drawing anything on top*.
+7. **The first white paper**: *"The conquest had more participants than the story does"* — the
+   force-composition series with published ranges, and what each source claims and why.
+
+Then hand findings across `research reports/STAGED-CHANGES.md` per the working rules — research
+informs the model; it does not silently edit it.

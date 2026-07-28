@@ -43,35 +43,71 @@ The general protocol lives in `/Users/augustgweon/Modeling Studio`. Its skills a
 10. **"Unknown" is a legitimate return**, and where a fallback is unavoidable the UI labels it as
     a fallback.
 
-{{PROJECT_SPECIFIC_RULES}}
+11. **Never state a contested claim flatly.** Anything the sources dispute carries an
+    `accounts:` array and renders "What the sources say". The card audit enforces it.
+
+12. **Every date carries its source system** (Julian / Gregorian / xiuhpohualli /
+    tonalpohualli); conversions only through `Research/modeling/calendar.py`. Attested Nahua
+    dates are facts; their Julian equivalents are *correlations* and are marked as such.
+
+13. **Nahuatl endonym first, everywhere.** Whose names the map uses is itself a claim.
+
+14. **Ranges, not numbers, for contested quantities** (forces, population, mortality). A single
+    confident number in that territory is a bug.
+
+15. **A georeference is a measurement with an error** — control points and residuals per
+    historical map in `Research/modeling/georef.py`.
 
 ---
 
 ## The canonical frame
 
-{{CANONICAL_FRAME}}
+**WGS84 lon/lat** · **Julian** dates with Gregorian alongside (the Gregorian reform is 1582 —
+Julian is what every Spanish source uses) · **Nahuatl endonym first**, Spanish exonym second ·
+**Mexica** for the people, **Triple Alliance** for the polity ("Aztec" only in the project title
+and the About panel, explained once) · the lake is **one named reconstruction**, never an
+average of competitors.
 
-Every source is converted into it. The conversions are in {{CONVERSION_CODE}}. **Never combine
-two sources without checking they are in the same frame** — this is the most expensive class of
-bug in this kind of project.
+Every source is converted into it. The conversions are in `Research/modeling/calendar.py` and
+`Research/modeling/georef.py`. **Never combine two sources without checking they are in the
+same frame** — this is the most expensive class of bug in this kind of project.
 
 ## The evidence boundary
 
-{{EVIDENCE_BOUNDARY}}
+Dense but partisan — the boundary runs through *kinds of claims*, not through a date: the dated
+campaign skeleton is well constrained; the 1519 lake shoreline is a reconstruction; force
+numbers, population and epidemic mortality are contested by up to an order of magnitude; motive
+and speech are the least constrained thing in the whole subject. The sources are witnesses to
+their own case (Cortés's legal brief, Bernal Díaz's counter-memoir, the Florentine Codex's
+Tlatelolca informants, Tlaxcala's petitions).
 
-Past it, the model is inference and the UI says so.
+Past it, the model is inference and the UI says so: `accounts:` ("What the sources say") on
+contested cards, bands instead of numbers, disputed map elements drawn as disputed,
+reconstructions labelled as reconstructions.
 
 ---
 
 ## Commands
 
 ```bash
-{{COMMANDS}}
+# run the app locally (serves web/; preview config in .claude/launch.json, port 8140)
+python3 -m http.server 8140 --directory web
+
+# validators — run before any publish; the build must refuse to publish on a regression
+python3 "Research/modeling/audit_all.py"
 ```
 
 ## Traps that have each cost real time here
 
-{{TRAPS}}
+- **Four frames, not one** (Julian / Gregorian / xiuhpohualli / tonalpohualli; Nahuatl /
+  Spanish / modern names). Everything through `calendar.py`; every authored date tagged with
+  its system.
+- **The modern DEM is post-drainage.** 1519 terrain = DEM minus post-conquest modification,
+  gated by the *named* lake reconstruction, labelled as a reconstruction.
+- **Correct licence ≠ correct subject** — collected figures stay `verified_subject: false`
+  until a human has looked at them (`Research/figures/collected/MANIFEST.json`).
+- **The two-colour map.** Spain-versus-Mexico colouring is a factual error, not a style choice.
+  The allegiance layer is the spine and the default view.
 
 Plus the standing ones: a process backgrounded with `&` inside a tool call dies when that call
 ends; a waiter on a `pgrep` pattern can match itself — wait on a **PID**; a static host can serve
