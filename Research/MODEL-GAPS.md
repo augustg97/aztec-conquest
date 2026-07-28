@@ -140,6 +140,21 @@ re-litigate):
 | City fabric | **APPLIED** — seeded procedural house fabric at street zoom (density keyed to precinct distance), charring follows the razing S→N, colonial traza blocks after 1522, chinampa trees; labelled impression |
 | Figure scale | **APPLIED** — marching files scaled to forces bands; skirmish/massacre scenes; canoe traffic ending at the brigantine victory; tribute porters gated by live allegiance; post-fall causeway exodus; waterfowl; all pure functions of t (seeded, no runtime randomness); About carries the impression disclaimer |
 
+**Round 6 — the rendering loop (8 iterations, user-directed at Google Earth quality):**
+
+| # | outcome |
+|---|---|
+| Canvas world layer | **APPLIED** — terrain, lakes and urban fabric moved to a canvas under the SVG (SVG keeps everything interactive); thousands of marks/frame affordable |
+| A2-e city fabric | **APPLIED** — canal/street network with width and wander, causeways through the city, blocks of courtyard compounds with block-level grain (orientation + material), L-shaped houses, chinampa strips, jetties + moored canoes at the water's edge, Xoloc fort, colonial courtyard-block traza after 1522 |
+| Precinct architecture | **APPLIED** — walled paved court with causeway gates, 5-terrace great temple with twin stairways and the Tlaloc/Huitzilopochtli shrines, round temple of Ehecatl, ballcourt, tzompantli, calmecac ranges; Tlatelolco precinct + its market crowd |
+| Settlement fabric (all polities) | **APPLIED** — every altepetl draws a town on its own plan (dispersed wards / compact plaza / linear), with temple platform → church at New Spain, burnt roofs while occupied; Cholula's Tlachihualtepetl authored |
+| Siege legibility | **APPLIED** — causeway breaches that close as the razing advances, arteries reddening as cut, S→N charring, rubble spoil, smoke |
+| A2-d-b ground detail | **APPLIED, with a MEASURED limit** — city basemap is 16.6 m/px vs SRTM's ~30 m native, screen asks 1.1 m/px, so no tile pyramid can help; detail grown from local contrast of the measured surface + world-anchored grain |
+
+**Honest corrections recorded this round:** vegetation blanketed the map twice (first keyed to "green" — the wet palette is green everywhere; then to the global mean — dark valleys read as forest); fixed only by local contrast. A first grain implementation cost **64 ms/frame** (per-frame canvas readback + overlay blend) and was fixed structurally (sample each image once at load; alpha-channel grain) → 8.9 ms. A scope slip (loop-local `lotPx` used in the market block) threw inside `render()` after the canvas drew, leaving a map with a blank date — caught by the console handle, not the screenshot.
+
+**The ceiling, stated:** photographic equivalence is unreachable — Google Earth is sub-metre aerial photography of an extant city; 1519 Tenochtitlan exists only as Calnek's lot reconstructions, the 1524 woodcut (measured 2.2 km error) and excavation. Detail past this point is invented, not derived, and the working rules forbid it.
+
 **Count: 5 open items — 0 at P1.**
 
 1. **A2-b-rest** consult González Aparicio (1973) in facsimile and trace properly (no

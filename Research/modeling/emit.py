@@ -521,6 +521,41 @@ ENTITY_IMAGE = {"cholula-massacre": "lienzo-cholula", "tlaxcala-alliance": "lien
 # In-app update log — written for a reader, not a changelog: the effect first,
 # the number as evidence. Rendered in the About panel.
 UPDATES = [
+    {"version": "2.3", "date": "28 July 2026",
+     "title": "The city, built",
+     "summary": "Tenochtitlan is no longer an outline with dots on it. Zoom in and the "
+                "island has its fabric: blocks of courtyard compounds under lime and "
+                "thatch, canals and streets with width, chinampa strips, jetties where "
+                "the city meets its lake, the walled precinct with its stepped pyramid — "
+                "and every other altepetl has a town of its own, on its own plan.",
+     "items": [
+         "The dense world moved to a canvas layer under the map, which is what makes "
+         "thousands of buildings per frame affordable; everything you can click stays "
+         "in the layer above it.",
+         "Blocks have grain: each shares an orientation off the canal line and a "
+         "roofing material, with lordly four-wing compounds near the precinct, garden "
+         "blocks, and tight commoner wards toward the water — Calnek's finding that "
+         "lot sizes varied by an order of magnitude, made visible.",
+         "The sacred precincts are architecture: a walled, paved court with gates on "
+         "the causeway axes, the great temple as five terraces with twin stairways and "
+         "the shrines of Tlaloc and Huitzilopochtli, the round temple of Ehecatl, the "
+         "ballcourt, the tzompantli, and the calmecac ranges along the walls.",
+         "Towns differ from each other: dispersed wards for Tlaxcallan's four "
+         "cabeceras, compact plaza towns on the roads, linear towns along the "
+         "lakeshore — and Cholula carries the Tlachihualtepetl, the greatest pyramid "
+         "by volume in the Americas, grassed over already in 1519.",
+         "The siege is legible on the ground: the causeway breaches the defenders cut "
+         "and the attackers spent the siege filling, the arteries reddening as each is "
+         "severed, the island charring south to north under its smoke, and the market "
+         "crowd thinning to nothing.",
+         "After 1522 the same ground rebuilds as the traza — red-tiled courtyard "
+         "blocks around their patios, the plaza and cathedral on the razed precinct — "
+         "while the Mexica parcialidades keep their old fabric at the edges.",
+         "Landscape detail is GROWN from the measured terrain rather than invented: "
+         "the elevation data is 30 m and the screen asks for one, so woodland clusters "
+         "where the ground is darker than its neighbourhood, with field terraces on "
+         "worked land and grain over everything.",
+     ]},
     {"version": "2.2", "date": "27 July 2026",
      "title": "Uniform ground, and the world peopled",
      "summary": "The whole war theatre now carries the same sharp terrain — a new "

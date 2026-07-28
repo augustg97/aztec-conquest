@@ -16,7 +16,15 @@ that pulled the Mexica empire apart.
 
 ## State right now
 
-Kickoff → v1.0 → v1.1 → **round 3 → ship v2.0** are complete. Round 3 (downloads approved by
+Kickoff → v1.0 → v1.1 → v2.0 → v2.1 → v2.2 → **round 6, the rendering loop → v2.3** are
+complete. Round 6 rebuilt the visual layer: a **canvas world layer** under the SVG carries
+terrain, lakes and a full procedural urban fabric (blocks, courtyard compounds, canals,
+jetties, precinct architecture, colonial traza), every altepetl draws its own town on its own
+plan, the siege is legible on the ground, and landscape detail is grown from the measured
+surface within a stated data ceiling. See MODEL-GAPS "Round 6" for the APPLIED table, the
+three honest corrections, and the ceiling statement.
+
+Earlier rounds: Round 3 (downloads approved by
 the user) added: the real terrain field (SRTM+ETOPO, seasonal wet/dry, clouds, the attested
 Popocatépetl plume), the continuous camera (wheel/drag/flights), the 1524 map measured (2.2 km
 mean residual — topology not geometry), 10 subject-verified PD card images with credits

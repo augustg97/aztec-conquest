@@ -1372,6 +1372,25 @@ function drawCity() {
   }
   // The fabric itself is on the canvas (drawCityFabric). At fabric zoom the
   // razing wash is drawn there too; farther out it stands in for the city.
+  // Rubble: the razing did not only burn the city, it PULLED IT DOWN into the
+  // canals — the attackers' own method, and why the ruin reads as spoil.
+  if ((phase === 'siege' || phase === 'ruin') && state.cam.span < 0.30) {
+    const prog2 = phase === 'ruin' ? 1 :
+      Math.max(0, Math.min(1, (state.t - D.meta.cityPhases.siege) / 0.20));
+    const fp2 = D.geo.features.find(f => f.id === 'city-footprint').points;
+    const rl = 19.4165 + prog2 * 0.048;
+    for (let i = 0; i < 240; i++) {
+      const lo = -99.1500 + rnd(i * 3.1) * 0.0400;
+      const la = 19.4185 + rnd(i * 7.3) * 0.0395;
+      if (la > rl || !pointInPoly(la, lo, fp2)) continue;
+      const [rx, ry] = project(lo, la);
+      if (!onScreen(rx, ry, 8)) continue;
+      const rs = Math.max(1, 0.00006 * PROJ.s);
+      g.appendChild(el('path', {
+        d: `M${rx},${ry - rs} L${rx + rs},${ry} L${rx},${ry + rs} L${rx - rs},${ry} Z`,
+        fill: i % 3 ? 'rgba(96,86,74,.72)' : 'rgba(54,46,38,.78)'}));
+    }
+  }
   if ((phase === 'siege' || phase === 'ruin') && state.cam.span > 0.62) {
     const fp = D.geo.features.find(f => f.id === 'city-footprint');
     const prog = phase === 'ruin' ? 1 :
