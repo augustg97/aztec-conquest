@@ -157,10 +157,12 @@ function render() {
   while (svg.firstChild) svg.removeChild(svg.firstChild);
   computeProj();
 
+  drawSubstrate();                                 // land, sea, sierra — always
   if (state.layers.water) drawWater();
   if (state.layers.tribute) drawTribute();
   if (state.layers.track) drawTrack();
   if (state.layers.works) drawWorksHit();
+  if (state.layers.epidemic) drawEpidemic();
   if (state.layers.altepetl) drawAltepetl();
   if (state.layers.events) drawEvents();
 
@@ -169,7 +171,72 @@ function render() {
   updateChapters();
   updateLegend();
   updateForces();
+  updateSiege();
+  updatePeople();
   if (state.selection) openCard(state.selection);
+}
+
+// The ground (round 2 — a first-release reader rightly reported "just a black
+// background"): land tint, the two seas, the sierra as soft ridgelines, the
+// named peaks. Authored cartography at visualization grade; the About panel
+// says so, and audit_witness scores the coastal relationships.
+function drawSubstrate() {
+  const r = svg.getBoundingClientRect();
+  const g = el('g', {'data-layer': 'substrate'});
+  g.appendChild(el('rect', {x: 0, y: 0, width: r.width, height: r.height,
+                            fill: '#161c17'}));
+  for (const f of D.geo.features) {
+    if (f.kind !== 'sea') continue;
+    g.appendChild(el('path', {d: pathOf(f.points, true),
+      fill: '#0a1422', stroke: 'rgba(120,160,200,.28)', 'stroke-width': 1}));
+  }
+  if (state.view === 'meso') {
+    for (const s of D.geo.seaLabels || [])
+      g.appendChild(el('text', Object.assign({class: 'sealab'},
+        xyAttrs(s.lon, s.lat)), s.label));
+  }
+  for (const f of D.geo.features) {
+    if (f.kind !== 'ridge') continue;
+    if (state.view !== 'meso' && f.id.indexOf('basin') < 0) continue;
+    g.appendChild(el('path', {d: pathOf(f.points, false), fill: 'none',
+      stroke: 'rgba(150,135,110,.16)', 'stroke-width': 9, 'stroke-linecap': 'round'}));
+    g.appendChild(el('path', {d: pathOf(f.points, false), fill: 'none',
+      stroke: 'rgba(150,135,110,.30)', 'stroke-width': 1.6, 'stroke-linecap': 'round'}));
+  }
+  for (const p of D.geo.peaks || []) {
+    if (p.views !== 'both' && p.views !== (state.view === 'meso' ? 'meso' : 'basin'))
+      continue;
+    const [x, y] = project(p.lon, p.lat);
+    if (!onScreen(x, y)) continue;
+    g.appendChild(el('path', {d: `M${x},${y - 5} L${x - 4.5},${y + 3} L${x + 4.5},${y + 3} Z`,
+      fill: 'rgba(200,190,170,.55)', stroke: 'rgba(0,0,0,.4)', 'stroke-width': 0.7}));
+    if (state.view !== 'meso' || p.views !== 'basin')
+      g.appendChild(el('text', {x: x + 7, y: y + 3, class: 'peaklab'}, p.label));
+  }
+  svg.appendChild(g);
+}
+
+function xyAttrs(lon, lat) {
+  const [x, y] = project(lon, lat);
+  return {x, y};
+}
+
+// The modelled smallpox wave: a halo on each polity while its onset window is
+// open. The layer label says "modelled"; the About panel carries the band.
+function drawEpidemic() {
+  const g = el('g', {'data-layer': 'epidemic'});
+  for (const e of ALTEPETL) {
+    if (!e.epidemic) continue;
+    const [t0, t1] = e.epidemic;
+    if (state.t < t0 || state.t > t1 + 0.04) continue;
+    const [x, y] = project(e.lon, e.lat);
+    if (!onScreen(x, y)) continue;
+    const a = state.t > t1 ? (1 - (state.t - t1) / 0.04) : 1;
+    const rr = (GROUP_R[e.kind] || 4) + 4.5;
+    g.appendChild(el('circle', {cx: x, cy: y, r: rr, fill: 'none',
+      stroke: '#8e6fb8', 'stroke-width': 2.2, opacity: 0.55 * a}));
+  }
+  svg.appendChild(g);
 }
 
 // The 1519 lake system and the works — drawn always as the substrate; the
@@ -423,6 +490,38 @@ function updateForces() {
     `<div class="fnote">ranges, not numbers — the sources are parties to the count</div>`;
 }
 
+function updateSiege() {
+  const s = D.meta.siege;
+  const panel = $('#siegePanel');
+  if (!s || state.t < s.start - 0.02 || state.t > s.end + 0.06) {
+    panel.classList.add('hidden'); return;
+  }
+  panel.classList.remove('hidden');
+  const cut = s.arteries.filter(a => state.t >= a.cut).length;
+  $('#siegeBody').innerHTML =
+    `<div class="fphase">${cut} of ${s.arteries.length} arteries severed</div>` +
+    s.arteries.map(a => {
+      const isCut = state.t >= a.cut;
+      return `<div class="lg"><i class="dot" style="background:${isCut ? '#a83232' : '#3f8f6b'}"></i>` +
+        `<span>${esc(a.label)}</span><b>${isCut ? 'cut ' + fmtT(a.cut) : 'open'}</b></div>`;
+    }).join('') +
+    `<div class="fnote">derived from the dated events, not narrated — Research/modeling/siege.py</div>`;
+}
+
+const PEOPLE_ENTS = D.entities.filter(e => e.layer === 'people');
+
+function updatePeople() {
+  const rows = PEOPLE_ENTS.filter(p =>
+    p.active && state.t >= p.active[0] - 0.02 && state.t <= p.active[1] + 0.08);
+  const panel = $('#peoplePanel');
+  if (!rows.length) { panel.classList.add('hidden'); return; }
+  panel.classList.remove('hidden');
+  $('#peopleBody').innerHTML = rows.map(p =>
+    `<div class="prow" data-id="${p.id}">${esc(p.name.split(' (')[0])}</div>`).join('');
+  $('#peopleBody').querySelectorAll('.prow').forEach(d =>
+    d.onclick = () => select(BY_ID[d.dataset.id]));
+}
+
 // -------------------------------------------------------------- timeline --
 function buildTimeline() {
   const band = $('#eraBand'), labs = $('#eraLabels'), dots = $('#eventDots'),
@@ -530,7 +629,13 @@ function setView(v) {
 }
 
 // ------------------------------------------------------------------ hash --
+// Throttled: Safari raises SecurityError past ~100 replaceState calls per 30 s,
+// which the playback loop would exceed in two seconds.
+let _lastHash = 0;
 function syncHash() {
+  const now = performance.now();
+  if (now - _lastHash < 300) return;
+  _lastHash = now;
   history.replaceState(null, '', `#t=${state.t.toFixed(4)}&v=${state.view}`);
 }
 function readHash() {

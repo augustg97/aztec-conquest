@@ -150,6 +150,87 @@ GEOMETRY = {
 }
 
 # ---------------------------------------------------------------------------
+# the substrate: seas, sierra, peaks (round 2 — closes the black-map defect)
+# ---------------------------------------------------------------------------
+# The user's round-1 report: "unable to view the map itself — just a black
+# background." Correct: the map had no land/sea substrate. These polygons give
+# it one. AUTHORED at visualization grade: a simplified modern coastline
+# (the 1519 coastline differs only below this drawing's resolution), stylised
+# ridgelines for the great sierras, and real named peaks. Every coastal-town
+# relationship is scored by audit_witness.py check_coast.
+
+SEAS = {
+    "sea-gulf-caribbean": {
+        "kind": "sea", "closed": True, "confidence": "moderate",
+        "source": "simplified modern coastline, authored; visualization grade",
+        "points": [(-97.75, 22.60), (-97.72, 22.20), (-97.55, 21.60), (-97.33, 21.00),
+                   (-97.20, 20.60), (-96.75, 20.20), (-96.30, 19.55), (-96.10, 19.15),
+                   (-95.75, 18.75), (-95.00, 18.40), (-94.40, 18.15), (-93.50, 18.40),
+                   (-92.60, 18.65), (-91.55, 18.75), (-90.70, 19.35), (-90.48, 20.00),
+                   (-90.35, 21.00), (-89.80, 21.30), (-88.90, 21.50), (-88.10, 21.55),
+                   (-87.05, 21.55), (-86.80, 21.10), (-86.85, 20.40), (-87.45, 19.60),
+                   (-87.65, 18.70), (-88.25, 18.40), (-88.30, 17.60), (-88.25, 16.55),
+                   (-88.85, 15.95), (-86.20, 15.75), (-86.20, 22.60)],
+    },
+    "sea-pacific": {
+        "kind": "sea", "closed": True, "confidence": "moderate",
+        "source": "simplified modern coastline, authored; visualization grade",
+        "points": [(-105.40, 20.60), (-105.00, 20.30), (-104.80, 19.80), (-104.30, 19.10),
+                   (-103.50, 18.60), (-102.20, 17.95), (-101.55, 17.62), (-100.85, 17.20),
+                   (-99.90, 16.83), (-98.75, 16.53), (-97.80, 15.97), (-96.50, 15.66),
+                   (-95.20, 16.15), (-94.80, 16.28), (-94.10, 16.15), (-93.55, 15.85),
+                   (-92.90, 15.35), (-92.25, 14.55), (-91.30, 13.95), (-90.30, 13.75),
+                   (-89.60, 13.45), (-89.30, 13.20), (-105.40, 13.20)],
+    },
+}
+
+RIDGES = {
+    "ridge-volcanic-belt": {
+        "kind": "ridge", "confidence": "moderate", "label": "Trans-Mexican Volcanic Belt",
+        "points": [(-103.60, 19.45), (-102.30, 19.55), (-101.00, 19.45), (-99.85, 19.20),
+                   (-99.20, 19.12), (-98.64, 19.05), (-98.10, 19.15), (-97.45, 19.05),
+                   (-97.15, 19.45)],
+    },
+    "ridge-sm-oriental": {
+        "kind": "ridge", "confidence": "moderate", "label": "Sierra Madre Oriental",
+        "points": [(-98.30, 22.40), (-98.55, 21.20), (-98.35, 20.30), (-97.70, 19.75)],
+    },
+    "ridge-sm-del-sur": {
+        "kind": "ridge", "confidence": "moderate", "label": "Sierra Madre del Sur",
+        "points": [(-100.90, 17.25), (-99.60, 17.35), (-98.30, 17.05), (-97.20, 16.60),
+                   (-96.30, 16.10)],
+    },
+    "ridge-sm-chiapas": {
+        "kind": "ridge", "confidence": "moderate", "label": "Sierra Madre de Chiapas",
+        "points": [(-93.90, 15.65), (-92.90, 15.15), (-91.90, 14.85), (-91.00, 14.55)],
+    },
+    "ridge-basin-west-rim": {
+        "kind": "ridge", "confidence": "moderate", "label": "Sierra de las Cruces / Ajusco",
+        "points": [(-99.24, 19.12), (-99.30, 19.26), (-99.36, 19.40), (-99.33, 19.55),
+                   (-99.29, 19.68)],
+    },
+    "ridge-basin-east-rim": {
+        "kind": "ridge", "confidence": "moderate", "label": "Sierra Nevada",
+        "points": [(-98.63, 19.00), (-98.64, 19.18), (-98.68, 19.30), (-98.71, 19.41),
+                   (-98.76, 19.55)],
+    },
+}
+
+# real, well-located summits — the visual anchors of the pass and the rims
+PEAKS = {
+    "citlaltepetl":   (19.030, -97.268, "Citlaltépetl (Pico de Orizaba)", "meso"),
+    "popocatepetl":   (19.023, -98.628, "Popocatépetl", "both"),
+    "iztaccihuatl":   (19.179, -98.641, "Iztaccíhuatl", "both"),
+    "nevado-toluca":  (19.108, -99.758, "Nevado de Toluca", "meso"),
+    "malinche":       (19.231, -98.032, "Matlalcueye (La Malinche)", "meso"),
+    "cofre-perote":   (19.492, -97.150, "Cofre de Perote", "meso"),
+    "ajusco":         (19.209, -99.258, "Ajusco", "basin"),
+    "cerro-estrella": (19.336, -99.090, "Huixachtlan (Cerro de la Estrella)", "basin"),
+}
+
+SEA_LABELS = [(-94.3, 20.9, "Gulf of Mexico"), (-99.8, 15.1, "Pacific Ocean")]
+
+# ---------------------------------------------------------------------------
 # geodesy helpers (small-region approximations are fine at Basin scale)
 # ---------------------------------------------------------------------------
 
@@ -233,6 +314,22 @@ def _selftest():
         assert len(g["points"]) >= (3 if g["closed"] else 2), name
         for lon, lat in g["points"]:
             assert 19.0 <= lat <= 20.0 and -99.5 <= lon <= -98.6, f"{name}: {lon},{lat}"
+    # substrate: seas closed and big, ridges open, peaks in frame
+    for name, g in SEAS.items():
+        assert g["closed"] and len(g["points"]) >= 10, name
+    for name, g in RIDGES.items():
+        assert len(g["points"]) >= 3 and g["label"], name
+    for pid, (lat, lon, label, views) in PEAKS.items():
+        assert 13.0 <= lat <= 23.0 and -106.0 <= lon <= -86.0 and label, pid
+        assert views in ("meso", "basin", "both"), pid
+    # the Paso de Cortés lies between the two volcanoes
+    po, iz = PEAKS["popocatepetl"], PEAKS["iztaccihuatl"]
+    assert abs((po[0] + iz[0]) / 2 - 19.101) < 0.02
+    # no altepetl may drown in an ocean (gazetteer cross-check runs in the audit,
+    # but the canonical land anchors must be on land here too)
+    for (lat, lon) in ((19.4348, -99.1318), (19.318, -98.238)):   # Tenochtitlan, Tlaxcala
+        for name, g in SEAS.items():
+            assert not point_in_polygon(lat, lon, g["points"]), f"{name} swallows {lat},{lon}"
     # geometry helpers behave
     sq = [(-99.10, 19.40), (-99.00, 19.40), (-99.00, 19.50), (-99.10, 19.50)]
     a = polygon_area_km2(sq)

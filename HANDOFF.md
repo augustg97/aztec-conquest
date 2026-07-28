@@ -16,11 +16,14 @@ that pulled the Mexica empire apart.
 
 ## State right now
 
-Kickoff → research round 1 → build → verify → ship are **complete**. The app is a working
-model, not a shell: 75 altepetl coloured by a per-day allegiance state machine, 64 dated cited
-events (19 with "What the sources say"), the González Aparicio lake system with clickable
-works, the campaign track, a piecewise day-scale timeline, three nested views, force bands,
-and an About that says what the model does not know.
+Kickoff → round 1 → ship v1.0 → **round 2 → ship v1.1** are complete. The app is a working
+model: 75 altepetl coloured by a per-day allegiance machine, **89 events** (23 with "What the
+sources say"), **18 people cards**, the González Aparicio lake system with clickable works,
+**a full land/sea/sierra substrate** (round 2 — a user report of "just a black background"
+was correct and is closed), **the epidemic as a calibrated network wave** with per-polity
+onset halos, **the siege as a derived six-artery state** with its own panel, tribute goods on
+province cards, the campaign track, the piecewise day-scale timeline, three views, force
+bands, and an About + update log that say what the model does not know.
 
 - All 7 research-module selftests green; `audit_all.py` at baseline **cards 0/0, witness 0/0**.
 - The register (`Research/MODEL-GAPS.md`): **8 open items, 0 at P1** — all kickoff P1s APPLIED
@@ -40,16 +43,17 @@ the Basin terrain field (A2-d — the map's substrate is dark glass, not terrain
 ~90 and no people cards yet (B2-d), 30 of ~38 Mendoza provinces (B1-b), page-level source pins
 (B2-b). The scope's card counts (~200 altepetl) exceed the first tranche's 75.
 
-## The work queue (= register order)
+## The work queue (= register order; 6 open, 0 P1)
 
-1. **D2 epidemic network model** — the largest unbuilt SCOPE layer.
-2. **D2-b siege-state mechanism** — causeway/aqueduct/brigantine control → derived supply/water.
-3. **B2-d events to ~90 + ~40 people cards** (people need a `people.py` + emitter support).
-4. **A2-b/c/d** — trace González Aparicio + the 1524 map properly (scans, control points,
-   affine residuals); chinampa districts; terrain field from INEGI CEM (post-drainage — always
-   "DEM minus modern modification, gated by the reconstruction, labelled").
-5. **B1-b remaining Mendoza roster**; **A3 licence verification** before any collected figure
-   ships; **B2-c** Mexica counter-diplomacy reversions.
+The top two need EXTERNAL DOWNLOADS the autonomous session must ask the user about first:
+
+1. **A2-b** trace the González Aparicio reconstruction + the 1524 Nuremberg map from scans
+   (Newberry scan is public domain, ~24 MB) — pixel control points, affine fit, residuals.
+2. **A2-d** Basin terrain field from INEGI CEM (download by area selection; post-drainage —
+   always "DEM minus modern modification, gated by the reconstruction, labelled").
+3. **A2-c** chinampa districts (authorable); **B1-b** remaining Mendoza roster (needs location
+   research, not typing); **B2-d-rest** people to ~40; **B2-b** page-level pins; **B2-c**
+   reversions (thin; may close negative); **A3** licence checks before any collected figure.
 
 ## Traps that have each cost real time here
 

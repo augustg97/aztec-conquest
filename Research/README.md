@@ -100,6 +100,15 @@ Read-only; they change nothing.
 
 ## Status
 
+**v2 (round 2 complete), 2026-07-27.** Round 2 added: the land/sea/sierra substrate (closing
+the user's black-map report, with new coast checks in the witness audit), `epidemic.py` (wave
+calibrated to the two documented pins; 2.3 km/day), `siege.py` (six event-derived arteries),
+`people.py` (18 cards, 3 with accounts), events 64 → 89, and Mendoza goods on 24 province
+cards. All selftests + both audits green; the anachronism screen caught and forced a rephrase
+of one forward-looking "viceroyalty" in a 1531 window. Remaining register: 6 items, 0 P1 —
+the top two (A2-b scans, A2-d DEM) require file downloads the session must clear with the
+user first.
+
 **v1 (research round 1 complete), 2026-07-27.**
 
 *Round 1* — all six kickoff P1s DELIVERED as staged artifacts: the calendar frame as code, the

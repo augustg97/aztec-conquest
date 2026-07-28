@@ -34,6 +34,9 @@ import events as events_mod
 import allegiance
 import georef
 import forces
+import epidemic
+import siege
+import people as people_mod
 from calendar import (t_of_julian, julian_of_t, jdn_of_julian, fmt_julian,
                       gregorian_of_jdn, tonalpohualli, MONTHS)
 
@@ -260,12 +263,15 @@ def build_entities():
             facts.append(["Tribute province", e["province"]])
         if e["entered"]:
             facts.append(["Entered tribute system", _entered_phrase(e["entered"])])
+        if e.get("goods"):
+            facts.append(["Principal tribute [CM]", e["goods"]])
         facts.append(["Modern", e["modern"]])
         conf = "contested" if e["coord_conf"] == "contested" else e["entry_conf"]
         note = e["note"]
         if e["coord_conf"] == "contested" and "approximate" not in (note or "").lower() \
            and "debated" not in (note or "").lower():
             note = (note + " " if note else "") + "Location approximate."
+        epi = epidemic.windows().get(slug)
         ents.append({
             "id": slug, "name": name, "kind": KIND_LABEL[e["group"]],
             "layer": "altepetl", "lon": e["lon"], "lat": e["lat"],
@@ -273,6 +279,7 @@ def build_entities():
             "confidence": conf, "note": note or "",
             "facts": facts, "eras": eras,
             "allegiance": allegiance.series(slug),
+            "epidemic": [epi[0], epi[1]] if epi else None,
             "sources": e["sources"],
         })
 
@@ -314,6 +321,21 @@ def build_entities():
                       "not survey-grade."}],
             "sources": [g["source"]],
         })
+
+    # people — cards, not map dots (they move); the People panel lists whoever
+    # is active at t, and the eras tile to T1 so a card read in 1540 says what
+    # became of them
+    for p in people_mod.PEOPLE:
+        ents.append({
+            "id": "person-" + p["slug"], "name": p["name"], "kind": "Person",
+            "layer": "people", "lon": None, "lat": None,
+            "from": T0, "to": None,
+            "confidence": p["confidence"], "note": p["note"],
+            "facts": [["Role", p["role"]]] + p["facts"],
+            "eras": p["eras"], "accounts": p["accounts"],
+            "active": [round(p["active"][0], 4), round(p["active"][1], 4)],
+            "sources": p["sources"],
+        })
     return ents
 
 
@@ -351,6 +373,34 @@ def build_events_js():
 # In-app update log — written for a reader, not a changelog: the effect first,
 # the number as evidence. Rendered in the About panel.
 UPDATES = [
+    {"version": "1.1", "date": "27 July 2026",
+     "title": "The land under the war — and the war's slower weapons",
+     "summary": "The map now has its ground: coasts, seas, the sierras and the named "
+                "volcanoes (a first-release report said, correctly, that the map was a "
+                "black background). And two layers stop being scenery: the smallpox is a "
+                "modelled wave, and the siege is a derived state.",
+     "items": [
+         "Land and sea: a simplified authored coastline, the Gulf and Pacific, the "
+         "great sierras and eight named peaks — including the two volcanoes whose pass "
+         "the column crossed in November 1519.",
+         "The epidemic is a mechanism now: a wave on the settlement network, seeded at "
+         "the coast in May 1520 and calibrated to the documented sixty days in the "
+         "capital from October — every polity shows its modelled onset window, and "
+         "mortality stays a band (30-50%, contested).",
+         "The siege is derived, not narrated: six arteries — four causeways, the "
+         "aqueduct, the open lake — each cut by a dated, cited event; a panel counts "
+         "the tourniquets 0 to 6 between 22 May and 13 August 1521.",
+         "Eighteen people join the model as time-aware cards — the three last "
+         "tlahtohqueh, Malintzin (with the four-century argument about her carried as "
+         "accounts), the Tlaxcalteca leadership, and the aftermath's builders.",
+         "Twenty-five new events carry the record to ~90, including the contested "
+         "Guadalupe tradition (dated as tradition, with the documentary silence "
+         "stated), don Carlos of Texcoco's burning, the Colegio de Tlatelolco, and "
+         "Sahagún beginning the interviews that became this model's own chief source.",
+         "Province cards now list their principal Mendoza tribute — cacao, quetzal "
+         "feathers, gold dust, cochineal — so the web the coalition broke is legible "
+         "good by good.",
+     ]},
     {"version": "1.0", "date": "27 July 2026",
      "title": "The coalition is on the map",
      "summary": "First release. The map draws allegiance per altepetl per day — 75 polities "
@@ -384,6 +434,11 @@ ABOUT = {
     "notKnow": [
         "The 1519 lake shoreline is a reconstruction (González Aparicio 1973), drawn "
         "here at visualization grade — the lakes were drained after the conquest.",
+        "The coastline and sierra are simplified authored cartography (the modern "
+        "coast, at this drawing's resolution, stands in for 1519's); the epidemic "
+        "layer is a modelled wave pinned only at its documented start and its "
+        "documented arrival in the capital — every other onset is a window, not a "
+        "record.",
         "Indigenous force numbers are contested by an order of magnitude; population "
         "and epidemic mortality more. Every such quantity is a band, never a number.",
         "Motive and speech are the least constrained things in the record. Contested "
@@ -444,11 +499,17 @@ def emit():
         "layers": [
             {"id": "water", "label": "Lakes & works (1519 reconstruction)", "on": True},
             {"id": "altepetl", "label": "Altepetl & allegiance", "on": True},
+            {"id": "epidemic", "label": "Epidemic wave (modelled)", "on": True},
             {"id": "tribute", "label": "Tribute flows", "on": True},
             {"id": "track", "label": "Campaign track", "on": True},
             {"id": "events", "label": "Events", "on": True},
             {"id": "works", "label": "Causeways & aqueduct cards", "on": True},
         ],
+        "siege": {"start": siege.SIEGE_START, "end": siege.SIEGE_END,
+                  "arteries": [{"label": a["label"], "cut": round(a["cut"], 4),
+                                "confidence": a["confidence"]} for a in siege.ARTERIES]},
+        "epidemicBand": [int(epidemic.MORTALITY_BAND[0] * 100),
+                         int(epidemic.MORTALITY_BAND[1] * 100)],
         "stateColor": STATE_COLOR,
         "stateLabel": {
             "alliance-core": "Triple Alliance seat", "tributary": "Tributary",
@@ -470,8 +531,19 @@ def emit():
     files.append(write("geo.js", header + "DATA.geo = " + j({
         "features": [{"id": k, "kind": g["kind"], "closed": g["closed"],
                       "confidence": g["confidence"], "points": g["points"]}
-                     for k, g in georef.GEOMETRY.items()],
+                     for k, g in georef.GEOMETRY.items()]
+                    + [{"id": k, "kind": g["kind"], "closed": True,
+                        "confidence": g["confidence"], "points": g["points"]}
+                       for k, g in georef.SEAS.items()]
+                    + [{"id": k, "kind": g["kind"], "closed": False,
+                        "confidence": g["confidence"], "points": g["points"],
+                        "label": g["label"]}
+                       for k, g in georef.RIDGES.items()],
         "anchors": [{"id": k, "lat": v[0], "lon": v[1]} for k, v in georef.ANCHORS.items()],
+        "peaks": [{"id": k, "lat": v[0], "lon": v[1], "label": v[2], "views": v[3]}
+                  for k, v in georef.PEAKS.items()],
+        "seaLabels": [{"lon": lo, "lat": la, "label": lb}
+                      for lo, la, lb in georef.SEA_LABELS],
     }) + ";\n" + "DATA.forces = " + j(forces.app_series()) + ";\n"))
 
     total = sum(n for _, n in files)

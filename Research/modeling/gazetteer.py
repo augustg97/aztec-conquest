@@ -378,11 +378,41 @@ _ROWS = [
      "the legal device that unhooked the company from Cuba"),
 ]
 
+# Principal tribute of the province, per the Codex Mendoza tribute folios
+# ([CM], Berdan & Anawalt 1992) — staples only, phrased as the folios group
+# them; confidence 'moderate' (folio-level pinning is register B2-b).
+GOODS = {
+    "quauhnahuac": "cotton mantles, loincloths and skirts; bark paper",
+    "huaxtepec": "cotton cloth; bark paper; warriors' costumes",
+    "chalco": "maize, beans and chia — the Basin's granary",
+    "xochimilco": "maize and garden produce of the chinampas",
+    "cuauhtitlan": "mantles; chillies; lime",
+    "axocopan": "maguey syrup; mantles",
+    "atotonilco-grande": "maguey syrup; mantles",
+    "hueypoxtla": "lime; maguey fibre cloth",
+    "xilotepec": "Otomí cloth; live eagles",
+    "tolocan": "maize; mantles of maguey fibre",
+    "tlachco": "warriors' costumes; copal",
+    "tepequacuilco": "copal; gourd bowls; gold discs",
+    "tlappan": "gold dust in gourds; jaguar-skin warrior costumes",
+    "cihuatlan": "cacao; cotton; red spondylus shells",
+    "coayxtlahuacan": "greenstones; quetzal feathers; gold dust; cochineal",
+    "coyolapan": "gold dust; cochineal; mantles",
+    "tlachquiauhco": "gold dust; quetzal feathers",
+    "tochtepec": "quetzal and tropical feathers; cacao; rubber; gold",
+    "xoconochco": "cacao; quetzal feathers; jaguar pelts; amber",
+    "cuetlaxtlan": "rich mantles; greenstones; feathers",
+    "quauhtochco": "mantles; maize",
+    "tochpan": "mantles; chillies; Huastec cloth",
+    "tzicoac": "mantles; chillies",
+    "tepeaca": "lime; carrying-frames; flint blades; captives for sacrifice",
+}
+
 ENTRIES = [
     {"slug": r[0], "nahuatl": r[1], "exonym": r[2], "modern": r[3],
      "lat": r[4], "lon": r[5], "group": r[6], "province": r[7],
      "entered": r[8], "role": r[9], "coord_conf": r[10], "entry_conf": r[11],
-     "note": r[12],
+     "note": r[12], "goods": GOODS.get(r[0]),
      "sources": ["[CM] Codex Mendoza (Berdan & Anawalt 1992)",
                  "[GER] Gerhard (1972)", "[INE] modern successor coordinates"]
                 + (["[SB] Smith & Berdan (1996)"] if r[7] else [])
@@ -438,6 +468,11 @@ def _selftest():
                 f"{e['slug']} tagged a Basin province but sits outside the Basin"
     # Cuetlaxtlan is a coastal province — exempt from the basin check by design.
     assert BY_SLUG["cempoala"]["province"] == "Cuetlaxtlan"
+
+    # goods only on real tributary polities, and every GOODS key resolves
+    for slug in GOODS:
+        assert slug in BY_SLUG, f"GOODS references unknown {slug}"
+        assert BY_SLUG[slug]["group"] == "tributary", f"{slug}: goods on a non-tributary"
 
     # The argument's anchors must be present and correctly grouped.
     assert at_1519("tlaxcala") == "independent"

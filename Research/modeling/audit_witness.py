@@ -75,6 +75,7 @@ def load_subject():
     return {"which": which,
             "features": {f["id"]: f for f in geo["features"]},
             "anchors": {a["id"]: (a["lat"], a["lon"]) for a in geo["anchors"]},
+            "peaks": geo.get("peaks", []),
             "entities": {e["id"]: e for e in ents},
             "events": evs}
 
@@ -167,8 +168,48 @@ def check_track(sub, F):
             F("MED", "track", i2, f"jump of {d:.0f} km from {i1}")
 
 
+# towns whose whole point is the coast — must be on land, near the sea
+COASTAL_TOWNS = ["cempoala", "quiahuiztlan", "villa-rica", "cuetlaxtlan",
+                 "tochpan", "cihuatlan", "xoconochco"]
+
+
+def check_coast(sub, F):
+    seas = {k: f["points"] for k, f in sub["features"].items() if f["kind"] == "sea"}
+    if not seas:
+        F("HIGH", "coast", "substrate", "no sea polygons — the map has no ground")
+        return
+    # nobody drowns in an ocean
+    for eid, e in sub["entities"].items():
+        if e.get("lat") is None:
+            continue
+        for k, pts in seas.items():
+            if point_in_polygon(e["lat"], e["lon"], pts):
+                F("HIGH", "coast", eid, f"drawn in the {k}")
+    # the coastal towns sit near the drawn sea
+    for slug in COASTAL_TOWNS:
+        e = sub["entities"].get(slug)
+        if not e:
+            continue
+        d = min(dist_to_polygon_km(e["lat"], e["lon"], pts) for pts in seas.values())
+        if d > 70.0:
+            F("MED", "coast", slug, f"{d:.0f} km from the drawn coast (> 70)")
+    # the pass the column crossed lies between the two volcanoes
+    peaks = {p["id"]: p for p in sub["peaks"]}
+    if "popocatepetl" in peaks and "iztaccihuatl" in peaks:
+        po, iz = peaks["popocatepetl"], peaks["iztaccihuatl"]
+        mid_lat, mid_lon = (po["lat"] + iz["lat"]) / 2, (po["lon"] + iz["lon"]) / 2
+        ev = next((e for e in sub["events"] if e["id"] == "paso-de-cortes"), None)
+        if ev and dist_km(ev["lat"], ev["lon"], mid_lat, mid_lon) > 15.0:
+            F("MED", "coast", "paso-de-cortes",
+              f"{dist_km(ev['lat'], ev['lon'], mid_lat, mid_lon):.0f} km from the saddle")
+    else:
+        F("MED", "coast", "peaks", "the framing volcanoes are missing")
+    if len(sub["peaks"]) < 6:
+        F("MED", "coast", "peaks", f"only {len(sub['peaks'])} named peaks (< 6)")
+
+
 CHECKS = [check_residual, check_footprint, check_islands, check_shore,
-          check_areas, check_works, check_track]
+          check_areas, check_works, check_track, check_coast]
 
 
 def _selftest():
@@ -190,14 +231,18 @@ def _selftest():
                     "tacuba-plaza": (19.459, -99.188), "tepeyac": (19.4847, -99.1172),
                     "iztapalapa-centre": (19.357, -99.092), "coyoacan-plaza": (19.3467, -99.1617),
                     "chapultepec-springs": (19.4206, -99.1819)},
+        "peaks": [],                                    # missing volcanoes -> coast fires
         "entities": {
             "xaltocan": {"id": "xaltocan", "lat": 19.0, "lon": -99.0},     # dry land!
             "cuitlahuac": {"id": "cuitlahuac", "lat": 19.45, "lon": -99.05},  # in synthetic lake OK
+            "cempoala": {"id": "cempoala", "lat": 19.45, "lon": -95.0},    # in the synthetic sea!
             **{s: {"id": s, "lat": 19.45, "lon": -99.05} for s in SHORE_TOWNS},  # ALL drowned!
         },
         "events": [{"t": 2.0, "lat": 19.0, "lon": -99.0, "id": "a", "track": True},
                    {"t": 1.0, "lat": 25.0, "lon": -90.0, "id": "b", "track": True}],
     }
+    sub["features"]["sea-x"] = {"kind": "sea", "points":
+        [(-96.0, 19.0), (-94.0, 19.0), (-94.0, 20.0), (-96.0, 20.0)]}
     findings = []
 
     def F(sev, check, what, detail):
@@ -206,9 +251,12 @@ def _selftest():
     for c in CHECKS:
         c(sub, F)
     checks_fired = {f["check"] for f in findings}
-    expect = {"residual", "footprint", "islands", "shore", "areas", "works", "track"}
+    expect = {"residual", "footprint", "islands", "shore", "areas", "works", "track",
+              "coast"}
     missing = expect - checks_fired
     assert not missing, f"selftest: checks failed to fire: {missing}"
+    assert any(f["check"] == "coast" and f["what"] == "cempoala" for f in findings), \
+        "coast check missed the drowned coastal town"
     print(f"selftest OK — all {len(CHECKS)} checks fire on synthetic defects")
 
 

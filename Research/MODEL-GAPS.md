@@ -13,8 +13,9 @@ nobody retries it · items with no status are open.
 
 IDs are referenced from white papers, code comments and commit messages. **Never recycle one.**
 
-*Rewritten after research round 1, 2026-07-27. Round 0 seeded 9 items (6 P1); round 1
-delivered all six P1s as staged artifacts + audits, and opened 7 successor items.*
+*Rewritten after round 2, 2026-07-27. Round 0 seeded 9 items (6 P1); round 1 delivered all six
+P1s; round 2 answered the user's black-map report (substrate), built the epidemic and siege
+mechanisms, and added people/events/goods depth.*
 
 ---
 
@@ -31,6 +32,11 @@ delivered all six P1s as staged artifacts + audits, and opened 7 successor items
 | D1 forces | "Who is fighting" panel, ranges only | siege 700-950 Spanish vs 24,000-200,000 allies, on screen |
 | E1+F1 gates | audit_all wired into build_site.py; refuses to publish on regression | both audits 0/0 reading web/data (the artifact the app executes) |
 | SCOPE §2 time axis | piecewise scrubber, campaign = 56% of track, breakpoints drawn + labelled | xOf/tOf exact inverses; day-stepping in-campaign |
+| **Round 2** — substrate (user-reported defect) | authored coastline + Gulf/Pacific + 6 sierra ridgelines + 8 named peaks; land/sea fills at every view | coast check green: 0 polities in ocean, 7 coastal towns ≤ 70 km of drawn coast; pass-between-volcanoes ≤ 15 km |
+| D2 epidemic mechanism | wave on kNN settlement network, seeded Cempoala May 1520, calibrated to capital onset 1 Oct 1520 [FC]; halos + onset windows | speed 2.3 km/day; Basin onsets all Aug 1520-Jan 1521; Tlaxcala before capital (consistent w/ Maxixcatzin); band 30-50% stays a band |
+| D2-b siege state | 6 arteries, each cut by a dated cited event; in-app panel counts 0→6 | pressure monotone; 3 cut 22 May, 6 by 10 Jun 1521; selftest asserts event-date lockstep |
+| B2-d (partial) people + events | 18 people cards (3 with accounts: Malintzin, Xicohtencatl the Younger, Cacama); events 64 → 89 (23 with accounts) | people eras tile 1502-1551; contested people carry accounts; card audit still 0/0 |
+| B1 depth: tribute goods | principal Mendoza tribute on 24 province cards | [CM]-sourced fact rows, confidence moderate |
 
 ---
 
@@ -66,9 +72,9 @@ delivered all six P1s as staged artifacts + audits, and opened 7 successor items
 
 | # | P | item | touches | status |
 |---|---|---|---|---|
-| D1 | P2 | Force composition as ranges + readout | `forces.py`, `DATA.forces` | **DELIVERED** — 3 contingents × 5 phases, per-source claims with stakes; WP-01; figure |
-| D2 | P2 | Epidemic model on the altepetl exchange network, mortality as a band | new `epidemic.py` | **open — NOT built in round 1.** The epidemic exists as dated events with accounts and band language, not as a network mechanism. This is the largest unbuilt SCOPE §3 layer |
-| D2-b | P2 | Siege-state mechanism (causeway/aqueduct/brigantine control → per-district supply and water) | new `siege.py` | open — round 1 carries the siege as events + works cards |
+| D1 | P2 | Force composition as ranges + readout | `forces.py`, `DATA.forces` | **APPLIED** (round 1) |
+| D2 | P2 | Epidemic model on the altepetl network, mortality as a band | `epidemic.py` | **APPLIED** (round 2) — see APPLIED table; sub-altepetl structure, second waves and differential mortality deliberately excluded (module docstring) |
+| D2-b | P2 | Siege-state mechanism | `siege.py` | **APPLIED** (round 2) — supply is modelled as cut/not-cut only; no source supports finer (that limit is stated on the panel) |
 
 ## E. The independent witness
 
@@ -108,11 +114,14 @@ re-litigate):
 
 ---
 
-**Count: 8 open items — 0 at P1.** All six kickoff P1s are DELIVERED as staged artifacts.
-The ones that would move the model furthest next, in order:
+**Count: 6 open items — 0 at P1, none user-visible.** Remaining, in value order — note the
+first two need EXTERNAL DATA the session cannot fetch without the user (file downloads):
 
-1. **D2 epidemic network model** — the largest unbuilt SCOPE layer.
-2. **D2-b siege-state mechanism** — turns the siege from events into a derived state.
-3. **B2-d events to ~90 + people cards** — the narrative texture the scope promises.
-4. **A2-b/A2-c/A2-d** — proper tracing, chinampas, terrain field.
-5. **B1-b** — the remaining Mendoza roster.
+1. **A2-b** trace González Aparicio + the 1524 Nuremberg map from scans (needs the scans
+   downloaded; the 24 MB Newberry file is public domain).
+2. **A2-d** Basin terrain field from INEGI CEM (needs the DEM download; area-selection route).
+3. **A2-c** chinampa districts (authorable from literature descriptions; medium).
+4. **B1-b** remaining Mendoza roster (the omitted provinces are omitted BECAUSE poorly
+   located — adding them means researching locations, not typing names).
+5. **B2-d-rest** people 18 → ~40; **B2-b** page/folio-level source pinning.
+6. **B2-c** Mexica counter-diplomacy reversions (thin evidence; may close negative).
