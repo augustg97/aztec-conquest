@@ -17,12 +17,17 @@
   </div>
   <div id="readout">
     <div id="tBig">—</div>
+    <div id="tCal"></div>
     <div id="eraName">—</div>
     <div id="statsBlock"></div>
   </div>
 </div>
 
 <div id="leftrail">
+  <div class="panel" id="viewsPanel">
+    <div class="panel-h">VIEW</div>
+    <div id="viewBtns"></div>
+  </div>
   <div class="panel" id="chaptersPanel">
     <div class="panel-h">CHAPTERS <span class="chev" id="chaptersChev">▾</span></div>
     <div id="chapterList"></div>
@@ -35,7 +40,16 @@
     <div id="layerToggles"></div>
   </div>
   <!-- context stack: thematic panels, one pattern, N panels -->
-  <div id="ctxStack"></div>
+  <div id="ctxStack">
+    <div class="panel" id="legendPanel">
+      <div class="panel-h">ALLEGIANCE NOW</div>
+      <div id="legendBody"></div>
+    </div>
+    <div class="panel hidden" id="forcesPanel">
+      <div class="panel-h">WHO IS FIGHTING</div>
+      <div id="forcesBody"></div>
+    </div>
+  </div>
 </div>
 
 <!-- info card: one panel, every selection -->
@@ -90,6 +104,8 @@
 <script src="data/meta.js"></script>
 <script src="data/eras.js"></script>
 <script src="data/entities.js"></script>
+<script src="data/eventsFull.js"></script>
+<script src="data/geo.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
