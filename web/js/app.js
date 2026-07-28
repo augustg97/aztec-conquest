@@ -196,9 +196,400 @@ const TENOCH = BY_ID['tenochtitlan'];
 const TRACK_EVENTS = D.eventsFull.filter(e => e.track);
 
 // ----------------------------------------------------------------- render --
+// ---------------------------------------------------------- world canvas --
+/* The dense raster world — terrain, lakes and the city's own fabric — lives on
+ * a canvas under the SVG. Google-Earth-grade urban fabric is thousands of
+ * marks per frame, and SVG nodes are not free (ARCHITECTURE-PATTERNS §1:
+ * canvas above a few thousand). Everything interactive or labelled stays in
+ * the SVG above. Both use project(), so they are a matched pair. */
+const cvs = $('#world');
+const ctx = cvs.getContext('2d');
+const TERRAIN_IMG = {};
+
+function preloadTerrain() {
+  for (const tr of TERRAIN) for (const s of ['dry', 'wet']) {
+    const im = new Image();
+    im.onload = () => render();
+    im.src = `img/terrain-${tr.id}-${s}.jpg`;
+    TERRAIN_IMG[tr.id + '-' + s] = im;
+  }
+}
+
+function sizeCanvas() {
+  const r = svg.getBoundingClientRect();
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (cvs.width !== Math.round(r.width * dpr) ||
+      cvs.height !== Math.round(r.height * dpr)) {
+    cvs.width = Math.round(r.width * dpr);
+    cvs.height = Math.round(r.height * dpr);
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return r;
+}
+
+/* Sun from the NW, matching the terrain hillshade: shadows fall to the SE.
+ * One constant, so the raster and the vector world agree about the light. */
+const SUN = {dx: 0.55, dy: 0.62};
+
+function cpath(pts, close) {
+  ctx.beginPath();
+  for (let i = 0; i < pts.length; i++) {
+    const [x, y] = project(pts[i][0], pts[i][1]);
+    if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+  }
+  if (close) ctx.closePath();
+}
+
+function drawWorld() {
+  const r = sizeCanvas();
+  ctx.clearRect(0, 0, r.width, r.height);
+  ctx.fillStyle = '#161c17';
+  ctx.fillRect(0, 0, r.width, r.height);
+
+  for (const f of D.geo.features) {
+    if (f.kind !== 'sea') continue;
+    cpath(f.points, true);
+    ctx.fillStyle = '#0a1422';
+    ctx.fill();
+  }
+
+  const wet = wetness(state.t);
+  ctx.imageSmoothingQuality = 'high';
+  for (const tr of TERRAIN) {
+    const a = terrainAlpha(tr.id);
+    if (a <= 0) continue;
+    const v = (D.meta.terrain || D.meta.views)[tr.id];
+    const [x0, y0] = project(v.lon0, v.lat1);
+    const [x1, y1] = project(v.lon1, v.lat0);
+    if (x1 < -40 || y1 < -40 || x0 > r.width + 40 || y0 > r.height + 40) continue;
+    const dry = TERRAIN_IMG[tr.id + '-dry'], wl = TERRAIN_IMG[tr.id + '-wet'];
+    if (dry && dry.complete && dry.naturalWidth) {
+      ctx.globalAlpha = a;
+      ctx.drawImage(dry, x0, y0, x1 - x0, y1 - y0);
+    }
+    if (wet > 0.02 && wl && wl.complete && wl.naturalWidth) {
+      ctx.globalAlpha = a * wet;
+      ctx.drawImage(wl, x0, y0, x1 - x0, y1 - y0);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  if (state.layers.water) {
+    for (const f of D.geo.features) {
+      if (f.kind !== 'lake') continue;
+      cpath(f.points, true);
+      ctx.fillStyle = `rgba(96,150,196,${(0.34 + 0.14 * wet).toFixed(3)})`;
+      ctx.fill();
+      ctx.strokeStyle = `rgba(130,180,220,${(0.5 + 0.2 * wet).toFixed(3)})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  }
+  if (state.layers.city) drawCityFabric();
+}
+
+// ------------------------------------------------------- the city fabric --
+/* Tenochtitlan-Tlatelolco as urban fabric rather than blobs: a canal-and-
+ * street network, blocks, house lots, courtyard compounds with cast shadows
+ * and lime-plaster roofs, chinampa strips, gardens, and the precinct's own
+ * stepped pyramids. AN ARTISTIC IMPRESSION rooted in Calnek's reconstruction
+ * of the lot-and-canal fabric and the chroniclers' descriptions — every
+ * position is a deterministic seed, not a record (About panel says so). */
+
+const ISLAND_BBOX = {lon0: -99.1520, lon1: -99.1085, lat0: 19.4180, lat1: 19.4600};
+const BLOCK = 0.00165;            // ~175 m block pitch, canal-to-canal
+const LOT = BLOCK / 3;
+
+function drawCityFabric() {
+  const span = state.cam.span;
+  if (span > 0.62) return;
+  const phase = cityPhaseAt(state.t);
+  const fp = CITY_BY_ID_FP();
+  if (!fp) return;
+  const lod = span < 0.10 ? 2 : span < 0.26 ? 1 : 0;
+  const r = {width: cvs.width, height: cvs.height};
+  const razeProg = phase === 'ruin' ? 1 : phase === 'siege'
+    ? Math.max(0, Math.min(1, (state.t - D.meta.cityPhases.siege) / 0.20)) : 0;
+  const charLat = 19.4165 + razeProg * 0.048;
+  const traza = CITY_BY_ID['traza'];
+  const pxPerDeg = PROJ.s;
+
+  // 1 — the ground of the island itself: packed earth and lime, lifted a shade
+  cpath(fp, true);
+  ctx.fillStyle = 'rgba(186,174,148,.55)';
+  ctx.fill();
+
+  // 2 — chinampa strips: long narrow raised fields, the real thing's signature
+  if (phase !== 'colonial') {
+    for (const ch of D.geo.city.filter(f => f.kind === 'chinampa')) {
+      const xs = ch.points.map(p => p[0]), ys = ch.points.map(p => p[1]);
+      const lo0 = Math.min(...xs), lo1 = Math.max(...xs);
+      const la0 = Math.min(...ys), la1 = Math.max(...ys);
+      const strip = 0.000085;                       // ~9 m: chinampa width
+      ctx.lineWidth = Math.max(0.6, strip * pxPerDeg * 0.75);
+      for (let lo = lo0; lo < lo1; lo += strip * 2) {
+        const [ax, ay] = project(lo, la0), [bx, by] = project(lo, la1);
+        ctx.strokeStyle = 'rgba(104,138,78,.75)';
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+        const [cx2, cy2] = project(lo + strip, la0), [dx2, dy2] = project(lo + strip, la1);
+        ctx.strokeStyle = 'rgba(84,126,158,.55)';   // the water between them
+        ctx.beginPath(); ctx.moveTo(cx2, cy2); ctx.lineTo(dx2, dy2); ctx.stroke();
+      }
+      if (lod >= 1) {                                // willows on the margins
+        ctx.fillStyle = 'rgba(58,92,48,.85)';
+        for (let i = 0; i < 40; i++) {
+          const lo = lo0 + rnd(i * 3 + lo0 * 1e4) * (lo1 - lo0);
+          const la = la0 + rnd(i * 7 + la0 * 1e4) * (la1 - la0);
+          const [tx, ty] = project(lo, la);
+          ctx.beginPath(); ctx.arc(tx, ty, Math.max(0.8, 0.00003 * pxPerDeg), 0, 7); ctx.fill();
+        }
+      }
+    }
+  }
+
+  // 3 — the canal-and-street network. Real fabric is not a chequerboard: the
+  //     lines carry a seeded wander and varying width, and canals alternate
+  //     with the streets that ran beside them.
+  const canalW = Math.max(1.1, 0.00013 * pxPerDeg);
+  const streetW = Math.max(0.8, 0.00009 * pxPerDeg);
+  const jit = i => (rnd(i * 91.3) - 0.5) * BLOCK * 0.30;
+  const wob = (i, k) => (rnd(i * 53.7 + k * 17.1) - 0.5) * BLOCK * 0.16;
+  const line = (isCanal, pts, i) => {
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = isCanal ? `rgba(84,131,166,${(0.55 + rnd(i) * 0.2).toFixed(2)})`
+                              : `rgba(216,205,180,${(0.4 + rnd(i + 5) * 0.2).toFixed(2)})`;
+    ctx.lineWidth = (isCanal ? canalW : streetW) * (0.7 + rnd(i + 9) * 0.7);
+    ctx.beginPath();
+    pts.forEach((p, k) => {
+      const [x, y] = project(p[0], p[1]);
+      k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    });
+    ctx.stroke();
+  };
+  let li = 0;
+  for (let lat = ISLAND_BBOX.lat0; lat < ISLAND_BBOX.lat1; lat += BLOCK, li++) {
+    const base = lat + jit(li);
+    const pts = [];
+    for (let lon = ISLAND_BBOX.lon0; lon <= ISLAND_BBOX.lon1 + 1e-9; lon += BLOCK)
+      pts.push([lon, base + wob(li, lon * 1e4)]);
+    line(li % 2 === 0, pts, li);
+  }
+  for (let lon = ISLAND_BBOX.lon0; lon < ISLAND_BBOX.lon1; lon += BLOCK, li++) {
+    const base = lon + jit(li);
+    const pts = [];
+    for (let lat = ISLAND_BBOX.lat0; lat <= ISLAND_BBOX.lat1 + 1e-9; lat += BLOCK)
+      pts.push([base + wob(li, lat * 1e4), lat]);
+    line(li % 2 === 1, pts, li);
+  }
+
+  // 3b — the causeways run THROUGH the city as its widest ground
+  for (const f of D.geo.features) {
+    if (f.kind !== 'causeway' && f.kind !== 'aqueduct') continue;
+    cpath(f.points, false);
+    ctx.lineCap = 'round';
+    ctx.lineWidth = (f.kind === 'causeway' ? 0.00030 : 0.00010) * pxPerDeg;
+    ctx.strokeStyle = f.kind === 'causeway' ? 'rgba(206,192,160,.95)'
+                                            : 'rgba(150,190,214,.9)';
+    ctx.stroke();
+    if (f.kind === 'causeway') {                    // the parapet edge lines
+      ctx.lineWidth = Math.max(0.5, 0.00003 * pxPerDeg);
+      ctx.strokeStyle = 'rgba(120,104,74,.55)';
+      ctx.stroke();
+    }
+  }
+
+  // 4 — the lots: courtyard compounds, the Mexica house form (Calnek: several
+  //     structures around a patio, on a lot reached from canal and street)
+  const ROOFS = ['rgba(226,214,186,1)', 'rgba(214,198,164,1)', 'rgba(200,182,150,1)',
+                 'rgba(188,166,132,1)', 'rgba(232,224,200,1)'];
+  const THATCH = ['rgba(176,150,106,1)', 'rgba(160,136,98,1)'];
+  const hgt = Math.max(0.7, 0.000035 * pxPerDeg);   // one storey, in pixels
+  let drawn = 0;
+  for (let lat = ISLAND_BBOX.lat0; lat < ISLAND_BBOX.lat1; lat += LOT) {
+    for (let lon = ISLAND_BBOX.lon0; lon < ISLAND_BBOX.lon1; lon += LOT) {
+      const [px, py] = project(lon, lat);
+      if (px < -30 || py < -30 || px > r.width + 30 || py > r.height + 30) continue;
+      if (!pointInPoly(lat, lon, fp)) continue;
+      const seed = Math.round(lat * 1e5) * 733 + Math.round(lon * 1e5);
+      const dPre = Math.hypot(lat - 19.4346, lon + 99.1313);
+      const inTraza = traza && pointInPoly(lat, lon, traza.points);
+      if (phase === 'colonial' && !inTraza && rnd(seed) > 0.42) continue;
+      const density = phase === 'colonial' ? (inTraza ? 0.96 : 0.34)
+                                           : Math.max(0.35, 0.97 - dPre * 20);
+      if (rnd(seed) > density) continue;
+      // skip the precinct footprints — they get their own architecture
+      if (lat > 19.4326 && lat < 19.4366 && lon > -99.1334 && lon < -99.1292) continue;
+      if (lat > 19.4494 && lat < 19.4520 && lon > -99.1386 && lon < -99.1340) continue;
+      const charred = phase !== 'colonial' && razeProg > 0 && lat < charLat;
+      const lotPx = LOT * pxPerDeg;
+      const colonial = phase === 'colonial' && inTraza;
+      // the compound: 2-4 wings around a patio, or a colonial block-house
+      const wings = colonial ? 1 : 2 + Math.floor(rnd(seed + 5) * 3);
+      for (let w = 0; w < wings; w++) {
+        const s2 = seed + w * 37;
+        const long = colonial ? 0.80 : 0.34 + rnd(s2 + 1) * 0.22;
+        const shortS = colonial ? 0.80 : 0.20 + rnd(s2 + 2) * 0.14;
+        const horiz = colonial ? false : (w % 2 === 0);
+        const bw = (horiz ? long : shortS) * lotPx;
+        const bh = (horiz ? shortS : long) * lotPx;
+        const ox = (colonial ? 0.10 : (w === 0 ? 0.06 : w === 1 ? 0.55 : 0.20)) * lotPx;
+        const oy = (colonial ? 0.10 : (w === 2 ? 0.60 : w === 1 ? 0.10 : 0.08)) * lotPx;
+        const bx = px + ox, by = py - lotPx + oy;
+        if (lod >= 1) {                              // cast shadow, sun from NW
+          ctx.fillStyle = 'rgba(28,22,16,.34)';
+          ctx.fillRect(bx + hgt * SUN.dx * 1.7, by + hgt * SUN.dy * 1.7, bw, bh);
+        }
+        const roof = charred ? 'rgba(38,30,24,1)'
+          : colonial ? 'rgba(206,148,120,1)'         // the colonial tile city
+          : (rnd(s2 + 3) > 0.72 ? THATCH[Math.floor(rnd(s2 + 4) * 2)]
+                                : ROOFS[Math.floor(rnd(s2 + 4) * ROOFS.length)]);
+        ctx.fillStyle = roof;
+        ctx.fillRect(bx, by, bw, bh);
+        if (lod >= 1) {                              // the lit and shaded faces
+          ctx.fillStyle = charred ? 'rgba(20,16,12,.75)' : 'rgba(120,102,78,.42)';
+          ctx.fillRect(bx, by + bh, bw, Math.max(0.5, hgt * 0.8));
+          ctx.fillStyle = 'rgba(255,248,228,.22)';
+          ctx.fillRect(bx, by - Math.max(0.4, hgt * 0.4), bw, Math.max(0.4, hgt * 0.4));
+        }
+        drawn++;
+      }
+      // a tree in the patio
+      if (lod >= 2 && !colonial && rnd(seed + 9) > 0.55) {
+        ctx.fillStyle = 'rgba(62,96,52,.9)';
+        ctx.beginPath();
+        ctx.arc(px + lotPx * 0.45, py - lotPx * 0.45, Math.max(0.9, lotPx * 0.09), 0, 7);
+        ctx.fill();
+      }
+    }
+  }
+
+  // 5 — the sacred precincts: walled, with their stepped pyramids
+  if (phase !== 'colonial') {
+    // the great court is ~400 m a side (the excavated precinct's own extent)
+    drawPrecinct(-99.1313, 19.4346, 0.0040, 0.0036, charLat, razeProg, lod, true);
+    drawPrecinct(-99.1372, 19.4507, 0.0022, 0.0020, charLat, razeProg, lod, false);
+  } else {
+    // the cathedral and the plaza mayor on the razed precinct
+    const [zx, zy] = project(-99.1320, 19.4330);
+    const zw = 0.0016 * pxPerDeg, zh = 0.0012 * pxPerDeg;
+    ctx.fillStyle = 'rgba(196,186,166,.85)';
+    ctx.fillRect(zx, zy - zh, zw, zh);
+    const [cx3, cy3] = project(-99.1332, 19.4348);
+    ctx.fillStyle = 'rgba(228,220,204,1)';
+    ctx.fillRect(cx3, cy3 - 0.0006 * pxPerDeg, 0.0011 * pxPerDeg, 0.0006 * pxPerDeg);
+  }
+  return drawn;
+}
+
+function CITY_BY_ID_FP() {
+  const f = D.geo.features.find(ff => ff.id === 'city-footprint');
+  return f ? f.points : null;
+}
+
+/* A walled precinct with its great twin-shrined pyramid, drawn as concentric
+ * terraces with a cast shadow — the shape the sources and the excavation
+ * agree on, at visualization grade. */
+function drawPrecinct(lon, lat, w, h, charLat, razeProg, lod, great) {
+  const p = PROJ.s;
+  const [x, y] = project(lon - w / 2, lat + h / 2);
+  const W = w * p, H = h * p;
+  const ruined = razeProg > 0 && lat < charLat;
+  const stone = (k) => ruined ? `rgb(${74 - k * 8},${62 - k * 7},${50 - k * 6})`
+                              : `rgb(${198 + k * 13},${184 + k * 13},${154 + k * 15})`;
+  // the plaza floor, then the serpent wall around it
+  ctx.fillStyle = ruined ? 'rgba(64,54,44,.9)' : 'rgba(226,217,193,.95)';
+  ctx.fillRect(x, y, W, H);
+  ctx.lineWidth = Math.max(1.4, W * 0.028);
+  ctx.strokeStyle = ruined ? 'rgba(48,40,32,.95)' : 'rgba(150,130,92,.95)';
+  ctx.strokeRect(x, y, W, H);
+  // gates on the three causeway axes (the sources' three roads into the court)
+  if (!ruined) {
+    ctx.strokeStyle = 'rgba(226,217,193,1)';
+    ctx.beginPath();
+    ctx.moveTo(x, y + H * 0.46); ctx.lineTo(x, y + H * 0.60);
+    ctx.moveTo(x + W * 0.44, y); ctx.lineTo(x + W * 0.58, y);
+    ctx.moveTo(x + W * 0.44, y + H); ctx.lineTo(x + W * 0.58, y + H);
+    ctx.stroke();
+  }
+
+  // THE GREAT TEMPLE — a stepped pyramid seen from above: concentric terraces
+  // offset toward the sun, twin stairways on the west face, twin shrines atop.
+  const bw = W * (great ? 0.34 : 0.36), bh = H * (great ? 0.36 : 0.40);
+  const bx = x + W * (great ? 0.50 : 0.46), by = y + H * 0.30;
+  ctx.fillStyle = 'rgba(20,15,11,.45)';
+  ctx.fillRect(bx + bw * 0.17, by + bh * 0.19, bw, bh);
+  const TER = 5;
+  for (let s = 0; s < TER; s++) {
+    const k = s / TER;
+    ctx.fillStyle = stone(s);
+    ctx.fillRect(bx + bw * k * 0.17, by + bh * k * 0.17,
+                 bw * (1 - k * 0.34), bh * (1 - k * 0.34));
+    ctx.strokeStyle = ruined ? 'rgba(30,24,18,.6)' : 'rgba(146,126,90,.55)';
+    ctx.lineWidth = Math.max(0.4, W * 0.004);
+    ctx.strokeRect(bx + bw * k * 0.17, by + bh * k * 0.17,
+                   bw * (1 - k * 0.34), bh * (1 - k * 0.34));
+  }
+  if (!ruined) {                                     // the two great stairways
+    ctx.fillStyle = 'rgba(178,160,122,1)';
+    ctx.fillRect(bx - bw * 0.02, by + bh * 0.16, bw * 0.10, bh * 0.30);
+    ctx.fillRect(bx - bw * 0.02, by + bh * 0.54, bw * 0.10, bh * 0.30);
+    if (lod >= 1) {
+      ctx.strokeStyle = 'rgba(120,104,76,.8)';
+      ctx.lineWidth = Math.max(0.3, W * 0.003);
+      for (let i = 0; i < 7; i++) {
+        const yy = by + bh * (0.17 + i * 0.042);
+        ctx.beginPath(); ctx.moveTo(bx - bw * 0.02, yy);
+        ctx.lineTo(bx + bw * 0.08, yy); ctx.stroke();
+        const y2 = by + bh * (0.55 + i * 0.042);
+        ctx.beginPath(); ctx.moveTo(bx - bw * 0.02, y2);
+        ctx.lineTo(bx + bw * 0.08, y2); ctx.stroke();
+      }
+    }
+    ctx.fillStyle = 'rgba(70,110,150,1)';            // Tlaloc's shrine, north
+    ctx.fillRect(bx + bw * 0.40, by + bh * 0.26, bw * 0.24, bh * 0.20);
+    ctx.fillStyle = 'rgba(178,66,48,1)';             // Huitzilopochtli's, south
+    ctx.fillRect(bx + bw * 0.40, by + bh * 0.54, bw * 0.24, bh * 0.20);
+  }
+
+  if (lod >= 1 && great) {
+    // the round temple of Ehecatl-Quetzalcoatl, facing the great temple
+    const [rx, ry] = project(lon - w * 0.16, lat);
+    const rr = W * 0.062;
+    ctx.fillStyle = 'rgba(20,15,11,.4)';
+    ctx.beginPath(); ctx.arc(rx + rr * 0.35, ry + rr * 0.4, rr, 0, 7); ctx.fill();
+    ctx.fillStyle = ruined ? 'rgb(66,56,46)' : 'rgb(212,200,170)';
+    ctx.beginPath(); ctx.arc(rx, ry, rr, 0, 7); ctx.fill();
+    ctx.fillStyle = ruined ? 'rgb(56,48,40)' : 'rgb(228,218,190)';
+    ctx.beginPath(); ctx.arc(rx, ry, rr * 0.55, 0, 7); ctx.fill();
+    // the ballcourt: the double-headed I of every Mesoamerican court
+    const [gx, gy] = project(lon - w * 0.32, lat + h * 0.20);
+    ctx.fillStyle = 'rgba(20,15,11,.35)';
+    ctx.fillRect(gx + W * 0.012, gy + H * 0.014, W * 0.06, H * 0.22);
+    ctx.fillStyle = ruined ? 'rgb(58,48,40)' : 'rgb(200,188,160)';
+    ctx.fillRect(gx, gy, W * 0.06, H * 0.22);
+    ctx.fillRect(gx - W * 0.032, gy, W * 0.124, H * 0.055);
+    ctx.fillRect(gx - W * 0.032, gy + H * 0.165, W * 0.124, H * 0.055);
+    // the tzompantli platform south of the great temple
+    const [sx, sy] = project(lon - w * 0.06, lat - h * 0.26);
+    ctx.fillStyle = ruined ? 'rgb(56,48,40)' : 'rgb(206,194,166)';
+    ctx.fillRect(sx, sy, W * 0.13, H * 0.045);
+    // smaller temples ringing the court
+    for (let i = 0; i < 5; i++) {
+      const a = 0.12 + i * 0.19;
+      const [tx, ty] = project(lon - w * (0.36 - i * 0.02), lat + h * (0.34 - a * 1.4));
+      const tw = W * 0.05, th = H * 0.055;
+      ctx.fillStyle = 'rgba(20,15,11,.3)';
+      ctx.fillRect(tx + tw * 0.3, ty + th * 0.3, tw, th);
+      ctx.fillStyle = ruined ? 'rgb(62,52,42)' : 'rgb(216,204,174)';
+      ctx.fillRect(tx, ty, tw, th);
+    }
+  }
+}
+
 function render() {
   while (svg.firstChild) svg.removeChild(svg.firstChild);
   computeProj();
+  drawWorld();                                     // the raster world, first
 
   drawSubstrate();                                 // land, sea, sierra — always
   if (state.layers.water) drawWater();
@@ -241,32 +632,11 @@ function terrainAlpha(id) {
   return Math.max(0, Math.min(1, (0.55 - span) / 0.18));
 }
 
+/* The vector half of the substrate. The raster half (background, seas,
+ * terrain) is drawn on the canvas by drawWorld() — they share project(). */
 function drawSubstrate() {
   const g = el('g', {'data-layer': 'substrate'});
-  g.appendChild(el('rect', {x: 0, y: 0, width: PROJ.W, height: PROJ.H,
-                            fill: '#161c17'}));
-  for (const f of D.geo.features) {
-    if (f.kind !== 'sea') continue;
-    g.appendChild(el('path', {d: pathOf(f.points, true),
-      fill: '#0a1422', stroke: 'none'}));
-  }
   const wet = wetness(state.t);
-  for (const tr of TERRAIN) {
-    const a = terrainAlpha(tr.id);
-    if (a <= 0) continue;
-    const v = (D.meta.terrain || D.meta.views)[tr.id];
-    const [x0, y0] = project(v.lon0, v.lat1);
-    const [x1, y1] = project(v.lon1, v.lat0);
-    if (x1 < -40 || y1 < -40 || x0 > PROJ.W + 40 || y0 > PROJ.H + 40) continue;
-    const attrs = {x: x0, y: y0, width: x1 - x0, height: y1 - y0,
-                   preserveAspectRatio: 'none'};
-    const dry = el('image', Object.assign({href: `img/terrain-${tr.id}-dry.jpg`,
-                                           opacity: a}, attrs));
-    g.appendChild(dry);
-    if (wet > 0.02)
-      g.appendChild(el('image', Object.assign({href: `img/terrain-${tr.id}-wet.jpg`,
-                                               opacity: a * wet}, attrs)));
-  }
   if (state.cam.span > 8) {
     for (const s of D.geo.seaLabels || [])
       g.appendChild(el('text', Object.assign({class: 'sealab'},
@@ -358,25 +728,15 @@ function drawEpidemic() {
 
 // The 1519 lake system and the works — drawn always as the substrate; the
 // geometry is a named reconstruction and its cards say so.
+/* The lakes' fills are on the canvas (drawWorld); this keeps the island's
+ * outline, which reads as an edge over the fabric rather than a wash. */
 function drawWater() {
   const g = el('g', {'data-layer': 'water'});
-  // the seasonal pulse: the closed basin's lakes breathe with the rains —
-  // a MODELLED annual cycle (SCOPE §3 'lake level'), calibrated to nothing
-  // finer than wet/dry, and labelled modelled on the works cards
-  const wet = wetness(state.t);
-  const fill = `rgba(96,150,196,${(0.30 + 0.14 * wet).toFixed(3)})`;
-  const strk = `rgba(130,180,220,${(0.50 + 0.20 * wet).toFixed(3)})`;
-  for (const f of D.geo.features) {
-    if (f.kind !== 'lake') continue;
-    g.appendChild(el('path', {d: pathOf(f.points, true),
-      fill, stroke: strk, 'stroke-width': 1}));
-  }
-  // the island city footprint, on the water
   const fp = D.geo.features.find(f => f.id === 'city-footprint');
   if (fp && state.cam.span < 3.5) {
     g.appendChild(el('path', {d: pathOf(fp.points, true),
-      fill: 'rgba(200,180,140,.22)', stroke: 'rgba(200,180,140,.55)',
-      'stroke-width': 1}));
+      fill: state.cam.span > 0.62 ? 'rgba(200,180,140,.22)' : 'none',
+      stroke: 'rgba(206,188,150,.6)', 'stroke-width': 1}));
   }
   svg.appendChild(g);
 }
@@ -422,9 +782,21 @@ function drawCity() {
   if (state.cam.span > 1.2) return;
   const phase = cityPhaseAt(state.t);
   const g = el('g', {'data-layer': 'city'});
+  // once the canvas fabric is drawing the city for real, these polygons stop
+  // painting and become click targets only — the fabric IS the picture
+  const hitOnly = state.cam.span <= 0.62;
   for (const f of D.geo.city) {
     if (f.phases.indexOf(phase) < 0) continue;
-    const st = CITY_STYLE[f.kind] || {};
+    const st = hitOnly ? {} : (CITY_STYLE[f.kind] || {});
+    if (hitOnly && f.closed) {
+      const p = el('path', {d: pathOf(f.points, true), fill: 'rgba(0,0,0,0.001)',
+                            stroke: 'none', class: 'work'});
+      const card = BY_ID[CITY_CARD_OF[f.id]];
+      if (card) p.addEventListener('click', ev => { ev.stopPropagation(); select(card); });
+      g.appendChild(p);
+      continue;
+    }
+    if (hitOnly) continue;
     if (f.kind === 'church') {
       const [x, y] = project(f.points[0][0], f.points[0][1]);
       g.appendChild(el('path', {d: `M${x},${y - 6} L${x},${y + 2} M${x - 3},${y - 3.5} L${x + 3},${y - 3.5}`,
@@ -455,57 +827,9 @@ function drawCity() {
     if (card) p.addEventListener('click', ev => { ev.stopPropagation(); select(card); });
     g.appendChild(p);
   }
-  // THE FABRIC (round 5): at street zoom the island fills with its houses —
-  // a procedural impression of Calnek's dense urban fabric, deterministic in
-  // its seeds, densest toward the precinct, aligned to the axes; charring
-  // follows the razing south-to-north. Colonial phase rebuilds inside the
-  // traza as orthogonal blocks. An impression, and the About panel says so.
-  if (state.cam.span < 0.35) {
-    const fp = D.geo.features.find(f => f.id === 'city-footprint').points;
-    const step = 0.0013;
-    const prog = phase === 'ruin' ? 1 : phase === 'siege' ?
-      Math.max(0, Math.min(1, (state.t - D.meta.cityPhases.siege) / 0.20)) : 0;
-    const charLat = 19.418 + prog * 0.046;
-    const traza = CITY_BY_ID['traza'];
-    let cell = 0;
-    for (let lat = 19.418; lat < 19.462; lat += step) {
-      for (let lon = -99.150; lon < -99.110; lon += step, cell++) {
-        const seed = Math.round(lat * 7000) * 631 + Math.round(lon * 7000);
-        if (!pointInPoly(lat, lon, fp)) continue;
-        const inTraza = traza && pointInPoly(lat, lon, traza.points);
-        if (phase === 'colonial' && !inTraza && rnd(seed) > 0.35) continue;
-        const dPre = Math.hypot(lat - 19.4346, lon + 99.1313);
-        const density = phase === 'colonial' ? (inTraza ? 0.9 : 0.3)
-                        : Math.max(0.3, 0.9 - dPre * 22);
-        if (rnd(seed) > density) continue;
-        const [x, y] = project(lon + (rnd(seed + 1) - 0.5) * step * 0.7,
-                               lat + (rnd(seed + 2) - 0.5) * step * 0.7);
-        if (!onScreen(x, y, 10)) continue;
-        const w = 2.2 + rnd(seed + 3) * 2.4, h = 2.2 + rnd(seed + 4) * 2.4;
-        const charred = phase !== 'colonial' && prog > 0 && lat < charLat;
-        g.appendChild(el('rect', {x: x - w / 2, y: y - h / 2, width: w, height: h,
-          fill: charred ? 'rgba(30,24,20,.75)'
-                        : phase === 'colonial' ? 'rgba(214,204,186,.62)'
-                                               : 'rgba(207,192,162,.60)',
-          stroke: 'rgba(40,32,24,.35)', 'stroke-width': 0.4}));
-      }
-    }
-    // the chinampa gardens carry their trees
-    if (phase !== 'colonial') {
-      for (const ch of D.geo.city.filter(f => f.kind === 'chinampa')) {
-        const [c0, c1] = [ch.points[0], ch.points[2]];
-        for (let i = 0; i < 16; i++) {
-          const lon = c0[0] + rnd(i * 7 + c0[0]) * (c1[0] - c0[0]);
-          const lat = c0[1] + rnd(i * 13 + c0[1]) * (c1[1] - c0[1]);
-          const [x, y] = project(lon, lat);
-          g.appendChild(el('circle', {cx: x, cy: y, r: 1.4,
-            fill: 'rgba(74,110,58,.75)'}));
-        }
-      }
-    }
-  }
-  // razing: the city chars from the south as the siege advances
-  if (phase === 'siege' || phase === 'ruin') {
+  // The fabric itself is on the canvas (drawCityFabric). At fabric zoom the
+  // razing wash is drawn there too; farther out it stands in for the city.
+  if ((phase === 'siege' || phase === 'ruin') && state.cam.span > 0.62) {
     const fp = D.geo.features.find(f => f.id === 'city-footprint');
     const prog = phase === 'ruin' ? 1 :
       Math.max(0, Math.min(1, (state.t - D.meta.cityPhases.siege) / 0.20));
@@ -819,8 +1143,12 @@ const GROUP_R = {'Triple Alliance seat': 6, 'Rival empire': 5.5,
 function drawAltepetl() {
   const g = el('g', {'data-layer': 'altepetl'});
   const labelBudget = state.cam.span > 6 ? 5 : 4.4;
+  // Once the fabric is drawing the island for real, the two city dots are
+  // redundant and sit on top of the precinct they stand for — drop them.
+  const fabricOn = state.layers.city && state.cam.span <= 0.62;
   for (const e of ALTEPETL) {
     if (!activeAt(e, state.t)) continue;
+    if (fabricOn && (e.id === 'tenochtitlan' || e.id === 'tlatelolco')) continue;
     const st = allegianceAt(e, state.t);
     if (!st) continue;
     const [x, y] = project(e.lon, e.lat);
@@ -1405,6 +1733,7 @@ const esc = s => String(s == null ? '' : s)
 
 // ------------------------------------------------------------------ boot --
 readHash();
+preloadTerrain();
 buildTimeline();
 buildChapters();
 buildToggles();
