@@ -49,9 +49,14 @@ cd Research/modeling && python3 <module>.py
 
 | module | what it is | current state |
 |---|---|---|
-| `calendar.py` *(planned, A1)* | Julian ↔ Gregorian ↔ xiuhpohualli/tonalpohualli, correlation constant explicit | not yet built |
-| `georef.py` *(planned, A2)* | control points + residuals for the 1524 map and the lake reconstruction | not yet built |
-| `allegiance.py` *(planned, B2)* | the per-altepetl state machine | not yet built |
+| `calendar.py` | Julian/Gregorian/JDN + tonalpohualli/xiuhpohualli, correlation anchored 13 Aug 1521 = 1 Cóatl, explicit and swappable | **selftest green** — 3 Caso pairs mutually consistent; reproduces Caso's veintena days |
+| `gazetteer.py` | 75 polities: endonym/exonym/modern, coords, province, tributary entry, confidence | **selftest green** — 30 of ~38 Mendoza provinces; omissions recorded (B1-b) |
+| `events.py` | 64 dated cited events 1502-1550; 19 with `accounts`; 79 allegiance effects; 14 track points | **selftest green** — contested ⇒ ≥2 accounts enforced |
+| `allegiance.py` | the per-altepetl state machine — the spine | **selftest green** — 75 timelines, 228 transitions, all legal |
+| `georef.py` | anchors + authored geometry after **González Aparicio (1973)**, the named reconstruction; geodesy helpers | **selftest green** — terminal residuals ≤ 6 m |
+| `forces.py` | force composition as per-source ranges, 3 contingents × 5 phases | **selftest green** — asserts allies ≥ 10× Spanish at siege from the sources' own numbers |
+| `emit.py` | the card generator + artifact emitter → staged-artifacts/ | **selftest green** — 82 entities, 64 events, 167.5 KB |
+| `make_figures.py` | authored SVG figures from the models | both figures generated + visually verified |
 
 ## The audits
 
@@ -59,21 +64,23 @@ Read-only; they change nothing.
 
 | script | catches | current result |
 |---|---|---|
-| `audit_all.py` | runner (scaffolded) | no audits registered yet |
-| card audit *(planned, C1)* | a contested claim stated flatly; missing `accounts:`; era gaps | not yet built |
-| witness audit *(planned, E1)* | causeways/aqueducts/lake/footprint vs archaeology | not yet built |
+| `audit_all.py` | the gate: refuses on regression vs baseline | **all at baseline** |
+| `audit_cards.py` | era gaps; contested stated flatly; missing sources/allegiance; unlabelled correlations; anachronisms; banned naming | **0 HIGH / 0 MED** — 7 checks, each selftest-proven to fire |
+| `audit_witness.py` | drawn geography vs the archaeological witness + literature bands | **0 HIGH / 0 MED** — caught 5 drowned towns in draft geometry before anything shipped; footprint 15.6 km², lakes 766 km² |
 
 ## The dossiers
 
 | file | covers |
 |---|---|
-| *(none yet — round 1 opens 01, 02, 03, 04)* | |
+| `01-basin-and-lakes/01-lake-system-and-works.md` | the lake system, the works, the reconstruction problem, the named canonical source |
+| `04-the-sources/01-witnesses-to-their-own-case.md` | the five source families, each one's stake, and the `accounts:` doctrine |
+| *(02 tributary system, 03 campaign — record lives in gazetteer.py/events.py; prose dossiers pending, register B2-b)* | |
 
 ## The white papers
 
 | paper | thesis |
 |---|---|
-| *(planned, round 1)* "The conquest had more participants than the story does" | the force-composition question, measured, with what each source claims and why each would claim it |
+| `WP-01-more-participants-than-the-story.md` | the "500 Spaniards" defect has 3 independent causes; the cheapest is the map itself, fixed structurally by the allegiance layer; measured ratios from the sources' own numbers |
 
 ---
 
@@ -93,31 +100,30 @@ Read-only; they change nothing.
 
 ## Status
 
-**v0 (kickoff), 2026-07-27.**
+**v1 (research round 1 complete), 2026-07-27.**
 
-*Round 0 (kickoff)* — scope adopted from the Studio's worked example; source survey done
-(all P1 sources confirmed to exist digitally, licences flagged for verification); scaffold
-running and visually verified; gap register seeded with 9 items.
+*Round 1* — all six kickoff P1s DELIVERED as staged artifacts: the calendar frame as code, the
+named lake reconstruction (González Aparicio 1973) with authored geometry and residuals, the
+75-polity gazetteer, the 64-event skeleton, the allegiance machine, the `accounts:` card
+system, both audits (0 HIGH / 0 MED, all checks selftest-proven), the force bands, WP-01, and
+two authored, visually verified figures.
 
-No models or audits exist yet. See [`MODEL-GAPS.md`](MODEL-GAPS.md) for the **9 open items,
-6 at P1**.
+All selftests pass; `audit_all.py` at baseline. See [`MODEL-GAPS.md`](MODEL-GAPS.md) for the
+**8 open items, 0 at P1** — and for what the audits did NOT find, and the honest corrections
+(the witness audit caught 5 drowned towns in the draft geometry; two events were demoted from
+`contested` to `moderate` by the accounts-requirement).
 
-**Round 1, in priority order:**
+**The handover is staged:** `research reports/STAGED-CHANGES.md` lists 7 changes in 3 tiers,
+each with artifact, specific edit and gate. `/model-build` executes it.
 
-1. **A1 `calendar.py`** — the frame decision as code, with selftest; every authored date tagged
-   with its source system. *Do this before authoring a single dated event.*
-2. **A2 georeference** the chosen lake reconstruction and the 1524 Nuremberg map; record the
-   residuals. Everything spatial rests on this — and round 1 must **name** the canonical lake
-   reconstruction (SOURCE-SURVEY §1 lists the candidates).
-3. **B1 the altepetl gazetteer** — name (Nahuatl/Spanish/modern), coordinates, tribute
-   province, date and manner of entry into the tributary system, confidence. The model's spine.
-4. **B2 the allegiance state machine** with its selftest — the layer that makes this a model.
-5. **C1 the `accounts:` schema** + "What the sources say" card section + the card audit that
-   fails on a flatly-stated contested claim.
-6. **E1 the archaeological witness audit** — score asserted causeways, aqueducts, lake extent
-   and city footprint against Templo Mayor / survey literature *before drawing anything on top*.
-7. **The first white paper**: *"The conquest had more participants than the story does"* — the
-   force-composition series with published ranges, and what each source claims and why.
+**Round 2, in priority order:**
 
-Then hand findings across `research reports/STAGED-CHANGES.md` per the working rules — research
-informs the model; it does not silently edit it.
+1. **D2 the epidemic network model** — the largest unbuilt SCOPE §3 layer (currently events +
+   bands, not a mechanism).
+2. **D2-b the siege-state mechanism** — causeway/aqueduct/brigantine control → derived supply
+   and water per district.
+3. **B2-d events to ~90 and the ~40 people cards.**
+4. **A2-b/c/d** — trace the reconstruction and the 1524 map properly (scans + control points);
+   chinampa districts; the terrain field from INEGI CEM (minus post-conquest modification).
+5. **B1-b the remaining Mendoza roster**; **A3 licence verification** before any collected
+   figure ships.

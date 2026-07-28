@@ -24,16 +24,12 @@ PY = sys.executable
 
 # name, script, baseline, slow?, what it catches
 CHECKS = [
-    # ("cards",      "audit_cards.py",       {"HIGH": 0, "MED": 0}, False,
-    #  "factual errors, date drift, unhedged contested claims, anachronisms"),
-    # ("windows",    "audit_windows.py",     {"findings": 2},       False,
-    #  "an entity drawn when the thing it names did not exist"),
-    # ("coverage",   "coverage_audit.py",    {"outside": 0},        False,
-    #  "a drawn quantity against what the literature says it should be"),
-    # ("reference",  "audit_reference.py",   {"mean_abs": 0.70},    True,
-    #  "the whole model against an independent published source"),
-    # ("regression", "regression_gate.py",   {"true": 0},           True,
-    #  "an item a change made worse"),
+    ("cards",   "audit_cards.py",   {"HIGH": 0, "MED": 0}, False,
+     "era gaps, unhedged contested claims, missing sources/allegiance, "
+     "unlabelled calendar correlations, anachronisms, banned naming"),
+    ("witness", "audit_witness.py", {"HIGH": 0, "MED": 0}, False,
+     "drawn geography vs the archaeological witness: terminals, footprint, "
+     "drowned towns, lake areas, works, track continuity"),
 ]
 
 
