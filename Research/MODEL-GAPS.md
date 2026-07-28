@@ -20,9 +20,17 @@ delivered all six P1s as staged artifacts + audits, and opened 7 successor items
 
 ## APPLIED
 
+*Build pass 2026-07-27 executed all 7 staged changes; statuses below moved DELIVERED → APPLIED.*
+
 | item | what shipped | measured |
 |---|---|---|
-| *(none yet — round 1 artifacts are STAGED; the build pass applies them)* | | |
+| A1 calendar frame | Julian day readout in-campaign; Gregorian + labelled Nahua correlation on day-precision event cards | 3 Caso anchors consistent; t-scalar roundtrips at day resolution |
+| A2 named geography | González Aparicio (1973) lakes/works/footprint drawn + clickable, labelled visualization-grade | residuals ≤ 6 m; footprint 15.6 km² (band 10-18); lakes 766 km² (band 700-1,600) |
+| B1+B2 spine | 75 altepetl coloured by allegiance from one canonical reader; legend + tally read the same series | 1519: 0 coalition on screen; mid-siege: 24 allied + 12 occupied vs 30 tributary; 1550: 73 new-spain + 1 colonial-ally |
+| C1 card contract | accounts ("What the sources say"), confidence chip, era-span line, sources on every card | card audit 0 HIGH / 0 MED over 82 entities + 64 events; Cholula card renders 4 accounts |
+| D1 forces | "Who is fighting" panel, ranges only | siege 700-950 Spanish vs 24,000-200,000 allies, on screen |
+| E1+F1 gates | audit_all wired into build_site.py; refuses to publish on regression | both audits 0/0 reading web/data (the artifact the app executes) |
+| SCOPE §2 time axis | piecewise scrubber, campaign = 56% of track, breakpoints drawn + labelled | xOf/tOf exact inverses; day-stepping in-campaign |
 
 ---
 

@@ -348,6 +348,30 @@ def build_events_js():
     return evs
 
 
+# In-app update log — written for a reader, not a changelog: the effect first,
+# the number as evidence. Rendered in the About panel.
+UPDATES = [
+    {"version": "1.0", "date": "27 July 2026",
+     "title": "The coalition is on the map",
+     "summary": "First release. The map draws allegiance per altepetl per day — 75 polities "
+                "through the war and its aftermath — instead of a two-colour conquest.",
+     "items": [
+         "Every polity's standing (tributary, contested, coalition, occupied, New Spain) is "
+         "computed from 64 dated, cited events; the mid-siege map shows 24 allied and 12 "
+         "occupied against 30 still-tributary — the coalition, visibly.",
+         "Contested episodes — Cholula, Tóxcatl, Moctezuma's death and his famous 'surrender' "
+         "— carry a 'What the sources say' section naming who claims what and why each would.",
+         "The lakes, causeways, dike and aqueduct follow González Aparicio's 1973 "
+         "reconstruction, scored against the Templo Mayor anchor table (residuals under 6 m; "
+         "no town drawn in the water).",
+         "The timeline gives the two war years 56% of the track at day resolution, with the "
+         "scale breaks drawn; dates are Julian, with Nahua equivalents labelled as the "
+         "correlations they are.",
+         "Force numbers appear only as ranges: at the siege, 700-950 Spaniards beside "
+         "24,000-200,000 Nahua allies — the sources are parties to every count.",
+     ]},
+]
+
 ABOUT = {
     "what": "An interactive model of the fall of Tenochtitlan and its aftermath, "
             "1502-1550: the tributary system, the coalition that pulled it apart, the "
@@ -433,6 +457,7 @@ def emit():
             "occupied": "Occupied", "colonial-ally": "Colonial ally (privileged)",
             "new-spain": "New Spain", "spanish": "Spanish foundation"},
         "about": ABOUT,
+        "updates": UPDATES,
     }
 
     files = []
