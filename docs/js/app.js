@@ -285,7 +285,145 @@ function drawWorld() {
       ctx.stroke();
     }
   }
-  if (state.layers.city) drawCityFabric();
+  if (state.layers.city) {
+    drawSettlements();
+    drawCityFabric();
+  }
+}
+
+// --------------------------------------------------- settlements at large --
+/* Every altepetl gets its own fabric, not just the capital: a plaza with its
+ * temple platform, streets out of it, house compounds thinning with distance,
+ * orchards at the fringe, and a church once the polity passes into New Spain.
+ * Size follows the polity's standing; layout follows the Mesoamerican town
+ * form (a civic-ceremonial core with dispersed residential wards). An
+ * impression, deterministic per settlement id. */
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h) % 100000;
+}
+
+const SETTLE_R = {'Triple Alliance seat': 0.0075, 'Rival empire': 0.0068,
+                  'Independent polity': 0.0055, 'Tributary altepetl': 0.0036,
+                  'Spanish foundation': 0.0026};
+
+function drawSettlements() {
+  const p = PROJ.s;
+  const phase = cityPhaseAt(state.t);
+  if (0.0036 * p < 9) return;                      // nothing legible yet
+  const r = {width: cvs.width, height: cvs.height};
+  for (const e of ALTEPETL) {
+    if (e.id === 'tenochtitlan' || e.id === 'tlatelolco') continue;
+    if (!activeAt(e, state.t)) continue;
+    const st = allegianceAt(e, state.t);
+    if (!st) continue;
+    const R = SETTLE_R[e.kind] || 0.0034;
+    const Rpx = R * p;
+    if (Rpx < 7) continue;
+    const [cx, cy] = project(e.lon, e.lat);
+    if (cx < -Rpx * 2 || cy < -Rpx * 2 || cx > r.width + Rpx * 2 ||
+        cy > r.height + Rpx * 2) continue;
+    drawSettlement(e, cx, cy, R, Rpx, st, phase);
+  }
+}
+
+function drawSettlement(e, cx, cy, R, Rpx, st, phase) {
+  const seed = hashStr(e.id);
+  const p = PROJ.s;
+  const lod = Rpx > 60 ? 2 : Rpx > 22 ? 1 : 0;
+  const colonial = st === 'new-spain' || st === 'colonial-ally';
+  const sacked = st === 'occupied' && state.t < 1522.2;
+
+  // the cleared ground the town sits on
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, Rpx, Rpx * 0.86, 0, 0, 7);
+  ctx.fillStyle = 'rgba(178,166,140,.42)';
+  ctx.fill();
+
+  // streets out of the plaza, on the cardinal-ish axes of the town
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(214,203,178,.5)';
+  ctx.lineWidth = Math.max(0.7, Rpx * 0.035);
+  for (let i = 0; i < 4; i++) {
+    const a = i * Math.PI / 2 + (rnd(seed + i) - 0.5) * 0.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a) * Rpx * 1.05, cy + Math.sin(a) * Rpx * 0.92);
+    ctx.stroke();
+  }
+
+  // the house compounds: dense at the core, dispersed at the edge
+  const LOTN = lod >= 2 ? 13 : lod >= 1 ? 9 : 6;
+  const cell = (Rpx * 1.9) / LOTN;
+  const hg = Math.max(0.5, cell * 0.16);
+  for (let iy = 0; iy < LOTN; iy++) {
+    for (let ix = 0; ix < LOTN; ix++) {
+      const s2 = seed + iy * 131 + ix * 17;
+      const jx = (rnd(s2) - 0.5) * cell * 0.6, jy = (rnd(s2 + 1) - 0.5) * cell * 0.6;
+      const x = cx - Rpx * 0.95 + ix * cell + jx;
+      const y = cy - Rpx * 0.82 + iy * cell * 0.9 + jy;
+      const d = Math.hypot((x - cx) / Rpx, (y - cy) / (Rpx * 0.86));
+      if (d > 1.02) continue;
+      if (rnd(s2 + 2) > 1.0 - d * 0.62) continue;   // thins outward
+      if (d < 0.20) continue;                       // the plaza stays open
+      const bw = cell * (0.34 + rnd(s2 + 3) * 0.30);
+      const bh = cell * (0.28 + rnd(s2 + 4) * 0.26);
+      if (lod >= 1) {
+        ctx.fillStyle = 'rgba(28,22,16,.30)';
+        ctx.fillRect(x + hg * 0.9, y + hg, bw, bh);
+      }
+      ctx.fillStyle = sacked && rnd(s2 + 7) > 0.55 ? 'rgba(48,38,30,1)'
+        : colonial && rnd(s2 + 7) > 0.6 ? 'rgba(200,146,118,1)'
+        : rnd(s2 + 5) > 0.7 ? 'rgba(176,150,106,1)'   // thatch
+                            : `rgba(${210 + rnd(s2 + 6) * 22 | 0},${196 + rnd(s2 + 6) * 20 | 0},166,1)`;
+      ctx.fillRect(x, y, bw, bh);
+      if (lod >= 1) {
+        ctx.fillStyle = 'rgba(120,102,78,.38)';
+        ctx.fillRect(x, y + bh, bw, hg * 0.7);
+      }
+      // an orchard tree beside the outer compounds
+      if (lod >= 2 && d > 0.5 && rnd(s2 + 8) > 0.55) {
+        ctx.fillStyle = 'rgba(64,98,54,.85)';
+        ctx.beginPath();
+        ctx.arc(x + bw * 1.5, y + bh * 0.6, Math.max(0.8, cell * 0.13), 0, 7);
+        ctx.fill();
+      }
+    }
+  }
+
+  // the civic-ceremonial core: plaza, temple platform, and after the conquest
+  // a church on or beside it — the pattern repeated across New Spain
+  const pw = Rpx * 0.30;
+  ctx.fillStyle = 'rgba(226,217,193,.85)';
+  ctx.fillRect(cx - pw, cy - pw * 0.8, pw * 2, pw * 1.6);
+  if (!colonial) {
+    const tw = pw * 0.85, th = pw * 0.75;
+    const tx = cx - tw / 2, ty = cy - th * 1.05;
+    ctx.fillStyle = 'rgba(20,15,11,.4)';
+    ctx.fillRect(tx + tw * 0.16, ty + th * 0.2, tw, th);
+    for (let s = 0; s < 3; s++) {
+      const k = s / 3;
+      ctx.fillStyle = sacked ? `rgb(${76 - s * 8},${64 - s * 7},${52 - s * 6})`
+                             : `rgb(${202 + s * 14},${188 + s * 14},${158 + s * 16})`;
+      ctx.fillRect(tx + tw * k * 0.17, ty + th * k * 0.17,
+                   tw * (1 - k * 0.34), th * (1 - k * 0.34));
+    }
+    if (lod >= 1 && !sacked) {
+      ctx.fillStyle = 'rgba(168,74,56,1)';
+      ctx.fillRect(tx + tw * 0.36, ty + th * 0.30, tw * 0.28, th * 0.26);
+    }
+  } else {
+    const cw = pw * 0.7, ch = pw * 0.5;
+    ctx.fillStyle = 'rgba(20,15,11,.35)';
+    ctx.fillRect(cx - cw / 2 + cw * 0.2, cy - ch * 1.2 + ch * 0.25, cw, ch);
+    ctx.fillStyle = 'rgba(232,224,206,1)';
+    ctx.fillRect(cx - cw / 2, cy - ch * 1.2, cw, ch);
+    if (lod >= 1) {                                  // the bell tower's shadow
+      ctx.fillStyle = 'rgba(214,204,186,1)';
+      ctx.fillRect(cx - cw / 2, cy - ch * 1.55, cw * 0.26, ch * 0.4);
+    }
+  }
 }
 
 // ------------------------------------------------------- the city fabric --
@@ -398,6 +536,37 @@ function drawCityFabric() {
     }
   }
 
+  // 3c — canoes working the city canals: the traffic that fed a lake city,
+  //      which stops when the brigantines take the water (1 Jun 1521)
+  if (lod >= 1 && state.t < 1521.414) {
+    const cl = Math.max(1.4, 0.00009 * pxPerDeg);
+    ctx.strokeStyle = 'rgba(74,58,42,.85)';
+    ctx.lineWidth = Math.max(0.7, cl * 0.5);
+    for (let k = 0; k < 70; k++) {
+      const along = rnd(k * 5.1);
+      const which = Math.floor(rnd(k * 3.3) * 14);
+      const horiz = k % 2 === 0;
+      const fixed = ISLAND_BBOX.lat0 + which * BLOCK * (horiz ? 1 : 0)
+                  + (horiz ? 0 : 0);
+      let lat, lon;
+      if (horiz) {
+        lat = ISLAND_BBOX.lat0 + (which % 13) * BLOCK + jit((which % 13));
+        lon = ISLAND_BBOX.lon0 + ((along + state.t * (12 + rnd(k) * 10)) % 1)
+              * (ISLAND_BBOX.lon1 - ISLAND_BBOX.lon0);
+      } else {
+        lon = ISLAND_BBOX.lon0 + (which % 12) * BLOCK + jit((which % 12) + 13);
+        lat = ISLAND_BBOX.lat0 + ((along + state.t * (12 + rnd(k) * 10)) % 1)
+              * (ISLAND_BBOX.lat1 - ISLAND_BBOX.lat0);
+      }
+      if (!pointInPoly(lat, lon, fp)) continue;
+      const [qx, qy] = project(lon, lat);
+      ctx.beginPath();
+      if (horiz) { ctx.moveTo(qx - cl, qy); ctx.lineTo(qx + cl, qy); }
+      else { ctx.moveTo(qx, qy - cl); ctx.lineTo(qx, qy + cl); }
+      ctx.stroke();
+    }
+  }
+
   // 4 — the lots: courtyard compounds, the Mexica house form (Calnek: several
   //     structures around a patio, on a lot reached from canal and street)
   const ROOFS = ['rgba(226,214,186,1)', 'rgba(214,198,164,1)', 'rgba(200,182,150,1)',
@@ -414,8 +583,16 @@ function drawCityFabric() {
       const dPre = Math.hypot(lat - 19.4346, lon + 99.1313);
       const inTraza = traza && pointInPoly(lat, lon, traza.points);
       if (phase === 'colonial' && !inTraza && rnd(seed) > 0.42) continue;
+      // BLOCK CHARACTER: a whole block shares a character, so the fabric reads
+      // as neighbourhoods rather than uniform grain — great lordly compounds
+      // near the precinct, tight commoner wards toward the water, and gardens
+      // in between (Calnek's lots vary by an order of magnitude in size).
+      const bSeed = Math.floor(lat / BLOCK) * 977 + Math.floor(lon / BLOCK);
+      const bChar = rnd(bSeed);
+      const elite = bChar > 0.80 - Math.max(0, 0.30 - dPre * 12);
+      const garden = !elite && bChar < 0.10;
       const density = phase === 'colonial' ? (inTraza ? 0.96 : 0.34)
-                                           : Math.max(0.35, 0.97 - dPre * 20);
+        : garden ? 0.22 : elite ? 0.62 : Math.max(0.42, 1.02 - dPre * 18);
       if (rnd(seed) > density) continue;
       // skip the precinct footprints — they get their own architecture
       if (lat > 19.4326 && lat < 19.4366 && lon > -99.1334 && lon < -99.1292) continue;
@@ -424,11 +601,12 @@ function drawCityFabric() {
       const lotPx = LOT * pxPerDeg;
       const colonial = phase === 'colonial' && inTraza;
       // the compound: 2-4 wings around a patio, or a colonial block-house
-      const wings = colonial ? 1 : 2 + Math.floor(rnd(seed + 5) * 3);
+      const wings = colonial ? 1 : elite ? 4 : 2 + Math.floor(rnd(seed + 5) * 3);
+      const scale = elite ? 1.35 : garden ? 0.8 : 1;
       for (let w = 0; w < wings; w++) {
         const s2 = seed + w * 37;
-        const long = colonial ? 0.80 : 0.34 + rnd(s2 + 1) * 0.22;
-        const shortS = colonial ? 0.80 : 0.20 + rnd(s2 + 2) * 0.14;
+        const long = (colonial ? 0.80 : 0.34 + rnd(s2 + 1) * 0.22) * scale;
+        const shortS = (colonial ? 0.80 : 0.20 + rnd(s2 + 2) * 0.14) * scale;
         const horiz = colonial ? false : (w % 2 === 0);
         const bw = (horiz ? long : shortS) * lotPx;
         const bh = (horiz ? shortS : long) * lotPx;
@@ -453,12 +631,17 @@ function drawCityFabric() {
         }
         drawn++;
       }
-      // a tree in the patio
-      if (lod >= 2 && !colonial && rnd(seed + 9) > 0.55) {
-        ctx.fillStyle = 'rgba(62,96,52,.9)';
-        ctx.beginPath();
-        ctx.arc(px + lotPx * 0.45, py - lotPx * 0.45, Math.max(0.9, lotPx * 0.09), 0, 7);
-        ctx.fill();
+      // trees: a patio tree, and a stand of them where a block is a garden
+      if (lod >= 2 && !colonial && (garden || rnd(seed + 9) > 0.55)) {
+        ctx.fillStyle = garden ? 'rgba(56,92,46,.92)' : 'rgba(62,96,52,.9)';
+        const nT = garden ? 4 : 1;
+        for (let k = 0; k < nT; k++) {
+          ctx.beginPath();
+          ctx.arc(px + lotPx * (0.2 + rnd(seed + 20 + k) * 0.7),
+                  py - lotPx * (0.2 + rnd(seed + 30 + k) * 0.7),
+                  Math.max(0.9, lotPx * (garden ? 0.13 : 0.09)), 0, 7);
+          ctx.fill();
+        }
       }
     }
   }
