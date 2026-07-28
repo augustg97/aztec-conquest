@@ -1,0 +1,13 @@
+# large source datasets — never committed (root data/ only; web/data/ is app content and ships)
+/data/
+*.tif
+*.tiff
+*.nc
+
+# reference material used as a STANDARD: measured against, never reproduced
+reference/
+
+venv/
+__pycache__/
+.DS_Store
+scratchpad/

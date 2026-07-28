@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "aztec-conquest",
+      "runtimeExecutable": "/usr/bin/python3",
+      "runtimeArgs": ["-m", "http.server", "8140",
+                      "--directory", "/Users/augustgweon/Aztec Conquest/web"],
+      "port": 8140
+    }
+  ]
+}
