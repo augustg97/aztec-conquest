@@ -170,6 +170,24 @@ function eraAt(t) {
  * second copy). */
 function allegianceAt(e, t) { return lastLE(e.allegiance, t); }
 
+/* Deterministic pseudo-random for the figure-scale impressions: a pure
+ * function of the seed, so every scrub replays the same world. NEVER use
+ * Math.random in a render path. */
+function rnd(s) {
+  const x = Math.sin(s * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+function pointInPoly(lat, lon, pts) {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i], [xj, yj] = pts[j];
+    if ((yi > lat) !== (yj > lat) &&
+        lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
 const ALTEPETL = D.entities.filter(e => e.layer === 'altepetl');
 const WORKS = D.entities.filter(e => e.layer === 'works');
 const BY_ID = {};
@@ -188,6 +206,7 @@ function render() {
   if (state.layers.tribute) drawTribute();
   if (state.layers.track) drawTrack();
   if (state.layers.works) drawWorksHit();
+  if (state.layers.figures) drawFigures();
   if (state.layers.epidemic) drawEpidemic();
   if (state.layers.altepetl) drawAltepetl();
   if (state.layers.events) drawEvents();
@@ -209,6 +228,7 @@ function render() {
 // reconstruction over measurement, each labelled as what it is.
 const TERRAIN = [
   {id: 'meso'},
+  {id: 'corridor'},
   {id: 'basin'},
   {id: 'city'},
 ];
@@ -216,7 +236,8 @@ const TERRAIN = [
 function terrainAlpha(id) {
   const span = state.cam.span;
   if (id === 'meso') return 1;
-  if (id === 'basin') return Math.max(0, Math.min(1, (3.2 - span) / 0.9));
+  if (id === 'corridor') return Math.max(0, Math.min(1, (7.5 - span) / 1.8));
+  if (id === 'basin') return Math.max(0, Math.min(1, (2.6 - span) / 0.7));
   return Math.max(0, Math.min(1, (0.55 - span) / 0.18));
 }
 
@@ -383,6 +404,9 @@ function cityPhaseAt(t) {
   return 'colonial';
 }
 
+const CITY_BY_ID = {};
+(D.geo.city || []).forEach(f => { CITY_BY_ID[f.id] = f; });
+
 const CITY_STYLE = {
   precinct: {fill: 'rgba(214,196,152,.45)', stroke: 'rgba(120,100,60,.8)', w: 1.2},
   palace:   {fill: 'rgba(196,178,140,.38)', stroke: 'rgba(110,95,60,.7)', w: 1},
@@ -430,6 +454,55 @@ function drawCity() {
     const card = BY_ID[CITY_CARD_OF[f.id]];
     if (card) p.addEventListener('click', ev => { ev.stopPropagation(); select(card); });
     g.appendChild(p);
+  }
+  // THE FABRIC (round 5): at street zoom the island fills with its houses —
+  // a procedural impression of Calnek's dense urban fabric, deterministic in
+  // its seeds, densest toward the precinct, aligned to the axes; charring
+  // follows the razing south-to-north. Colonial phase rebuilds inside the
+  // traza as orthogonal blocks. An impression, and the About panel says so.
+  if (state.cam.span < 0.35) {
+    const fp = D.geo.features.find(f => f.id === 'city-footprint').points;
+    const step = 0.0013;
+    const prog = phase === 'ruin' ? 1 : phase === 'siege' ?
+      Math.max(0, Math.min(1, (state.t - D.meta.cityPhases.siege) / 0.20)) : 0;
+    const charLat = 19.418 + prog * 0.046;
+    const traza = CITY_BY_ID['traza'];
+    let cell = 0;
+    for (let lat = 19.418; lat < 19.462; lat += step) {
+      for (let lon = -99.150; lon < -99.110; lon += step, cell++) {
+        const seed = Math.round(lat * 7000) * 631 + Math.round(lon * 7000);
+        if (!pointInPoly(lat, lon, fp)) continue;
+        const inTraza = traza && pointInPoly(lat, lon, traza.points);
+        if (phase === 'colonial' && !inTraza && rnd(seed) > 0.35) continue;
+        const dPre = Math.hypot(lat - 19.4346, lon + 99.1313);
+        const density = phase === 'colonial' ? (inTraza ? 0.9 : 0.3)
+                        : Math.max(0.3, 0.9 - dPre * 22);
+        if (rnd(seed) > density) continue;
+        const [x, y] = project(lon + (rnd(seed + 1) - 0.5) * step * 0.7,
+                               lat + (rnd(seed + 2) - 0.5) * step * 0.7);
+        if (!onScreen(x, y, 10)) continue;
+        const w = 2.2 + rnd(seed + 3) * 2.4, h = 2.2 + rnd(seed + 4) * 2.4;
+        const charred = phase !== 'colonial' && prog > 0 && lat < charLat;
+        g.appendChild(el('rect', {x: x - w / 2, y: y - h / 2, width: w, height: h,
+          fill: charred ? 'rgba(30,24,20,.75)'
+                        : phase === 'colonial' ? 'rgba(214,204,186,.62)'
+                                               : 'rgba(207,192,162,.60)',
+          stroke: 'rgba(40,32,24,.35)', 'stroke-width': 0.4}));
+      }
+    }
+    // the chinampa gardens carry their trees
+    if (phase !== 'colonial') {
+      for (const ch of D.geo.city.filter(f => f.kind === 'chinampa')) {
+        const [c0, c1] = [ch.points[0], ch.points[2]];
+        for (let i = 0; i < 16; i++) {
+          const lon = c0[0] + rnd(i * 7 + c0[0]) * (c1[0] - c0[0]);
+          const lat = c0[1] + rnd(i * 13 + c0[1]) * (c1[1] - c0[1]);
+          const [x, y] = project(lon, lat);
+          g.appendChild(el('circle', {cx: x, cy: y, r: 1.4,
+            fill: 'rgba(74,110,58,.75)'}));
+        }
+      }
+    }
   }
   // razing: the city chars from the south as the siege advances
   if (phase === 'siege' || phase === 'ruin') {
@@ -557,6 +630,185 @@ function drawTrack() {
       g.appendChild(el('text', {x: hx + 10, y: hy + 3.5, class: 'mklab'},
         'the column, marching'));
   }
+  svg.appendChild(g);
+}
+
+// ---- the figure-scale impression layer (round 5) --------------------------
+// Files of soldiers, skirmish scenes, canoe traffic, porters, refugees,
+// waterfowl. Every position is a pure function of (seed, t); contingent
+// counts scale with forces.py's own bands; the About panel carries the
+// impression disclaimer. Rooted, not attested — and the code says which.
+
+function forcesBandsAt(t) {
+  const rows = D.forces.filter(r => r[0] <= t);
+  return rows.length ? rows[rows.length - 1][2] : null;
+}
+
+function trackPathAt(t) {
+  const done = TRACK_EVENTS.filter(e => e.t <= t);
+  if (!done.length) return null;
+  const next = TRACK_EVENTS.find(e => e.t > t);
+  const pts = done.map(e => project(e.lon, e.lat));
+  let head = pts[pts.length - 1];
+  if (next && t <= 1521.40) {
+    const last = done[done.length - 1];
+    const f = (t - last.t) / (next.t - last.t);
+    const [x1, y1] = project(next.lon, next.lat);
+    head = [head[0] + (x1 - head[0]) * f, head[1] + (y1 - head[1]) * f];
+    pts.push(head);
+  }
+  return {pts, head};
+}
+
+function walkBack(pts, dist) {
+  // point `dist` px behind the end of the polyline
+  let i = pts.length - 1;
+  while (i > 0 && dist > 0) {
+    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i];
+    const seg = Math.hypot(x1 - x0, y1 - y0);
+    if (seg >= dist) {
+      const u = dist / seg;
+      return [x1 + (x0 - x1) * u, y1 + (y0 - y1) * u];
+    }
+    dist -= seg; i--;
+  }
+  return pts[0];
+}
+
+const LAKESHORE_CANOE_TOWNS = ['xochimilco', 'texcoco', 'iztapalapa', 'culhuacan',
+                               'azcapotzalco', 'tlacopan', 'mexicaltzingo',
+                               'huitzilopochco', 'cuitlahuac', 'ecatepec'];
+
+function drawFigures() {
+  const g = el('g', {'data-layer': 'figures'});
+  const t = state.t, span = state.cam.span;
+  const bands = forcesBandsAt(t);
+
+  // 1 — the column as a marching file: Spanish file at the head, the far
+  //     larger allied contingent behind it, both scaled to the bands
+  if (span < 7 && t >= 1519.12 && t <= 1521.40 && bands) {
+    const tp = trackPathAt(t);
+    if (tp) {
+      const sp = bands['Spanish'] || [0, 0];
+      const al = bands['Tlaxcalteca and Nahua allies'] || [0, 0];
+      const nS = sp[1] ? Math.min(12, 4 + Math.round(Math.log10(sp[1]) * 2.4)) : 0;
+      const nA = al[1] ? Math.min(24, Math.round(Math.log10(al[1]) * 4.4)) : 0;
+      const gap = Math.max(3.5, 9 - span * 1.2);
+      for (let i = 1; i <= nS; i++) {
+        const [x, y] = walkBack(tp.pts, i * gap);
+        g.appendChild(el('circle', {cx: x, cy: y, r: 1.6, fill: '#cfd4da',
+          stroke: 'rgba(0,0,0,.5)', 'stroke-width': 0.4}));
+      }
+      for (let i = 1; i <= nA; i++) {
+        const [x, y] = walkBack(tp.pts, (nS + i) * gap + 3);
+        g.appendChild(el('circle', {cx: x, cy: y, r: 1.5,
+          fill: i % 3 ? '#d0b98a' : '#b98f6a',
+          stroke: 'rgba(0,0,0,.45)', 'stroke-width': 0.4}));
+      }
+    }
+  }
+
+  // 2 — skirmish scenes: defenders ring the ground, attackers close on it
+  if (span < 3.2) {
+    const win = 0.06;
+    for (const ev of D.eventsFull) {
+      if (!/battle|massacre/.test(ev.kind)) continue;
+      const dt = t - ev.t;
+      const dur = ev.precision === 'day' ? 0.03 : 0.06;
+      if (dt < 0 || dt > dur) continue;
+      const ph = dt / dur;
+      const [x, y] = project(ev.lon, ev.lat);
+      if (!onScreen(x, y, 60)) continue;
+      for (let i = 0; i < 9; i++) {
+        const a = i / 9 * Math.PI * 2 + rnd(i + ev.t) * 0.5;
+        const rr = 8 + rnd(i * 3 + 1) * 4 + Math.sin(t * 4000 + i) * 1.5;
+        g.appendChild(el('circle', {cx: x + Math.cos(a) * rr, cy: y + Math.sin(a) * rr,
+          r: 1.5, fill: '#4a4038', stroke: 'rgba(0,0,0,.4)', 'stroke-width': 0.4}));
+      }
+      const conv = ev.kind === 'massacre' ? 1 - ph * 0.55 : 1 - ph * 0.75;
+      for (let i = 0; i < 11; i++) {
+        const a = (rnd(i * 17 + 2) - 0.5) * 1.9 + Math.PI;   // from the west-ish
+        const rr = (34 * conv + rnd(i * 5) * 8) * (0.8 + 0.4 * rnd(i));
+        g.appendChild(el('circle', {cx: x + Math.cos(a) * rr, cy: y + Math.sin(a) * rr,
+          r: 1.6, fill: i % 4 ? '#d0b98a' : '#cfd4da',
+          stroke: 'rgba(0,0,0,.4)', 'stroke-width': 0.4}));
+      }
+    }
+  }
+
+  // 3 — the canoe-borne city: traffic between the lakeshore towns and the
+  //     island, ending the day the brigantines break the fleet (1 Jun 1521)
+  if (span < 1.8 && t < 1521.414 && TENOCH) {
+    const [cx, cy] = project(TENOCH.lon, TENOCH.lat);
+    for (let i = 0; i < 14; i++) {
+      const town = BY_ID[LAKESHORE_CANOE_TOWNS[i % LAKESHORE_CANOE_TOWNS.length]];
+      if (!town) continue;
+      const [tx, ty] = project(town.lon, town.lat);
+      let u = (t * (1.4 + rnd(i) * 0.8) * 40 + rnd(i * 31)) % 2;
+      if (u > 1) u = 2 - u;                        // out and back
+      const px = tx + (cx - tx) * u, py = ty + (cy - ty) * u;
+      const dx = (cx - tx), dy = (cy - ty), L = Math.hypot(dx, dy) || 1;
+      g.appendChild(el('path', {d: `M${px - dx / L * 2.6},${py - dy / L * 2.6} ` +
+        `L${px + dx / L * 2.6},${py + dy / L * 2.6}`,
+        stroke: '#e8e2d2', 'stroke-width': 1.1, opacity: 0.75}));
+    }
+  }
+
+  // 4 — tribute porters: single file on the arcs, only while the town still
+  //     stands tributary (the flows die as the coalition grows)
+  if (span > 1.0 && span < 9 && TENOCH) {
+    const [cx, cy] = project(TENOCH.lon, TENOCH.lat);
+    let drawn = 0;
+    for (let i = 0; i < ALTEPETL.length && drawn < 12; i++) {
+      const e = ALTEPETL[(i * 7 + 3) % ALTEPETL.length];
+      if (allegianceAt(e, t) !== 'tributary' || e.id === 'tenochtitlan') continue;
+      const [x, y] = project(e.lon, e.lat);
+      if (!onScreen(x, y, 100)) continue;
+      const mx = (x + cx) / 2 + (y - cy) * 0.12, my = (y + cy) / 2 - (x - cx) * 0.12;
+      const u = (t * 30 + rnd(i * 11)) % 1;
+      const bx = (1 - u) * (1 - u) * x + 2 * (1 - u) * u * mx + u * u * cx;
+      const by = (1 - u) * (1 - u) * y + 2 * (1 - u) * u * my + u * u * cy;
+      g.appendChild(el('circle', {cx: bx, cy: by, r: 1.3, fill: '#c96f4a',
+        opacity: 0.8}));
+      drawn++;
+    }
+  }
+
+  // 5 — the exodus: after the fall the survivors leave by the causeways
+  if (t >= 1521.6137 && t <= 1521.75 && span < 1.4) {
+    const outPh = (t - 1521.6137) / 0.136;
+    for (const cid of ['causeway-tepeyac', 'causeway-tlacopan', 'causeway-iztapalapa']) {
+      const f = D.geo.features.find(ff => ff.id === cid);
+      if (!f) continue;
+      const pts = f.points.map(p => project(p[0], p[1]));
+      for (let i = 0; i < 5; i++) {
+        const u = Math.min(0.98, (outPh * 1.3 + rnd(i * 13 + cid.length) * 0.35) % 1);
+        const seg = u * (pts.length - 1), si = Math.floor(seg), fu = seg - si;
+        const px = pts[si][0] + (pts[si + 1][0] - pts[si][0]) * fu;
+        const py = pts[si][1] + (pts[si + 1][1] - pts[si][1]) * fu;
+        g.appendChild(el('circle', {cx: px, cy: py, r: 1.4, fill: '#9a948a',
+          opacity: 0.8 - 0.4 * u}));
+      }
+    }
+  }
+
+  // 6 — the lake's waterfowl (the chroniclers' bird-thick water), indifferent
+  //     to the war
+  if (span < 2.4) {
+    const lake = D.geo.features.find(f => f.id === 'lake-texcoco');
+    if (lake) {
+      for (let i = 0; i < 8; i++) {
+        const u = (rnd(i * 3) + t * (0.5 + rnd(i) * 0.4)) % 1;
+        const v = (rnd(i * 5 + 1) + t * 0.13) % 1;
+        const lon = -99.170 + u * 0.27, lat = 19.34 + v * 0.20;
+        if (!pointInPoly(lat, lon, lake.points)) continue;
+        const [x, y] = project(lon, lat);
+        g.appendChild(el('path', {d: `M${x - 2.4},${y} L${x},${y - 1.6} L${x + 2.4},${y}`,
+          stroke: 'rgba(230,228,218,.6)', 'stroke-width': 0.9, fill: 'none'}));
+      }
+    }
+  }
+
   svg.appendChild(g);
 }
 

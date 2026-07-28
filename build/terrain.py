@@ -54,9 +54,10 @@ URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
 # and slope shading synthesise legible sub-grid texture from the measured
 # surface itself (ARCHITECTURE-PATTERNS §7), never from noise.
 VIEWS = {
-    "meso":  (-105.0, 13.5, -86.5, 22.5, 9, 3072),
-    "basin": (-99.55, 19.02, -98.55, 19.95, 12, 2600),
-    "city":  (-99.32, 19.27, -98.94, 19.57, 12, 2400),
+    "meso":     (-105.0, 13.5, -86.5, 22.5, 9, 6144),
+    "corridor": (-100.2, 17.9, -95.8, 20.4, 11, 5120),
+    "basin":    (-99.55, 19.02, -98.55, 19.95, 12, 2600),
+    "city":     (-99.32, 19.27, -98.94, 19.57, 12, 2400),
 }
 
 SEASONS = ("dry", "wet")

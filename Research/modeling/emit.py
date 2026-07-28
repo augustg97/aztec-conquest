@@ -521,6 +521,34 @@ ENTITY_IMAGE = {"cholula-massacre": "lienzo-cholula", "tlaxcala-alliance": "lien
 # In-app update log — written for a reader, not a changelog: the effect first,
 # the number as evidence. Rendered in the About panel.
 UPDATES = [
+    {"version": "2.2", "date": "27 July 2026",
+     "title": "Uniform ground, and the world peopled",
+     "summary": "The whole war theatre now carries the same sharp terrain — a new "
+                "corridor render from Veracruz to the Basin ends the blur beyond the "
+                "valley — and the model gains its figure scale: files of soldiers on "
+                "the march, skirmishes you can watch, canoes on the lake, porters on "
+                "the tribute roads, the exodus after the fall, and the island's own "
+                "house fabric at street zoom. All of it impression, and labelled so.",
+     "items": [
+         "A z11 terrain level covers the corridor Veracruz-Tlaxcallan-Basin-Morelos, "
+         "and the base map doubles to its data's native grain — the seam a reader "
+         "rightly photographed east of the Basin is gone.",
+         "At street zoom Tenochtitlan fills with its houses — densest toward the "
+         "precinct, charring south-to-north during the razing, rebuilt as orthogonal "
+         "traza blocks after 1522 — with trees on the chinampa gardens.",
+         "The column marches as a file: a steel-grey Spanish file and the far longer "
+         "tan allied file behind it, lengths scaled to the model's own force bands.",
+         "Battles play as scenes: defenders ring the ground, attackers close on it "
+         "through the event's window; massacres close a ring instead. Deterministic "
+         "in t — scrub back and the same scene replays.",
+         "The lake lives: canoe traffic runs between the shore towns and the island "
+         "until the day the brigantines break the fleet, waterfowl drift indifferent, "
+         "porters walk the tribute arcs while their towns still owe, and for six "
+         "weeks after the fall the causeways carry the grey file of the exodus.",
+         "Every figure-scale element is a seeded procedural impression rooted in the "
+         "accounts — counts from the force bands, nothing at figure scale an "
+         "attestation — stated in About and on the layer's own name.",
+     ]},
     {"version": "2.1", "date": "27 July 2026",
      "title": "The city itself, and the war in motion",
      "summary": "Tenochtitlan stops being an outline: precincts, palaces, the canal "
@@ -651,6 +679,12 @@ ABOUT = {
         "The 1524 Nuremberg woodcut is georeferenced and measured at a mean best-fit "
         "residual of 2.2 km (5.5 km at the city itself): topology, not geometry. It "
         "appears here as a document, and nothing in the model traces it.",
+        "Figure-scale scenes — the marching files, skirmishes, canoe traffic, porters, "
+        "refugees, the city's house fabric and its trees — are procedural ARTISTIC "
+        "IMPRESSIONS rooted in the accounts (Calnek's urban fabric; the chroniclers' "
+        "canoe-borne city; the causeway exodus after the fall). Contingent sizes follow "
+        "the model's own force bands; positions are deterministic seeds, not records. "
+        "Nothing at figure scale is an attestation.",
     ],
     "sources": [
         "Cortés, Cartas de relación (1519-26) — a legal self-defence, used as such",
@@ -709,9 +743,10 @@ def emit():
         # basemap extents — A MATCHED PAIR with build/terrain.py VIEWS (the city
         # image is wider than the city camera preset on purpose)
         "terrain": {
-            "meso":  {"lon0": -105.0, "lat0": 13.5, "lon1": -86.5, "lat1": 22.5},
-            "basin": {"lon0": -99.55, "lat0": 19.02, "lon1": -98.55, "lat1": 19.95},
-            "city":  {"lon0": -99.32, "lat0": 19.27, "lon1": -98.94, "lat1": 19.57},
+            "meso":     {"lon0": -105.0, "lat0": 13.5, "lon1": -86.5, "lat1": 22.5},
+            "corridor": {"lon0": -100.2, "lat0": 17.9, "lon1": -95.8, "lat1": 20.4},
+            "basin":    {"lon0": -99.55, "lat0": 19.02, "lon1": -98.55, "lat1": 19.95},
+            "city":     {"lon0": -99.32, "lat0": 19.27, "lon1": -98.94, "lat1": 19.57},
         },
         "layers": [
             {"id": "water", "label": "Lakes & works (1519 reconstruction)", "on": True},
@@ -722,6 +757,7 @@ def emit():
             {"id": "events", "label": "Events", "on": True},
             {"id": "works", "label": "Causeways & aqueduct cards", "on": True},
             {"id": "city", "label": "City model (phased)", "on": True},
+            {"id": "figures", "label": "Figures & life (impression)", "on": True},
         ],
         "siege": {"start": siege.SIEGE_START, "end": siege.SIEGE_END,
                   "arteries": [{"id": a["id"], "label": a["label"],

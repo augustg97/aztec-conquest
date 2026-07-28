@@ -132,6 +132,14 @@ re-litigate):
 | Event placement + readability | **APPLIED** — 34 researched intra-city placements (Xoloc, the palace, the precinct, the market...); global label-collision stacker with leader lines; the plague-year cluster now reads |
 | Event simulacra | **APPLIED** — interpolated marching column; kind glyphs; deterministic battle/massacre pulse rings; siege arteries redden as cut + brigantines + razing char & smoke; epidemic wavefront ring; t-keyed flowing tribute/track dashes — all pure functions of t, scrub-reproducible |
 
+**Round 5 (user feedback: uniform detail; figure-scale simulation):**
+
+| # | outcome |
+|---|---|
+| Terrain uniformity | **APPLIED** — corridor z11 level (Veracruz↔Basin↔Morelos, 5120 px) + meso at native z9 (6144 px); the photographed seam east of the Basin eliminated; basemaps 16.6 MB of the 25 MB budget |
+| City fabric | **APPLIED** — seeded procedural house fabric at street zoom (density keyed to precinct distance), charring follows the razing S→N, colonial traza blocks after 1522, chinampa trees; labelled impression |
+| Figure scale | **APPLIED** — marching files scaled to forces bands; skirmish/massacre scenes; canoe traffic ending at the brigantine victory; tribute porters gated by live allegiance; post-fall causeway exodus; waterfowl; all pure functions of t (seeded, no runtime randomness); About carries the impression disclaimer |
+
 **Count: 5 open items — 0 at P1.**
 
 1. **A2-b-rest** consult González Aparicio (1973) in facsimile and trace properly (no
