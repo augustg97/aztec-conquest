@@ -690,6 +690,56 @@ function drawCityFabric() {
     }
   }
 
+  // 3d — the water's edge: the canoe landings that made the island work. A
+  //      lake city meets its lake at jetties, not at a clean line.
+  if (lod >= 1) {
+    const cxl = fp.reduce((a, q) => a + q[0], 0) / fp.length;
+    const cyl = fp.reduce((a, q) => a + q[1], 0) / fp.length;
+    for (let i = 0; i < fp.length; i++) {
+      const a = fp[i], b = fp[(i + 1) % fp.length];
+      for (let k = 0; k < 9; k++) {
+        const u = (k + 0.5) / 9;
+        const lo = a[0] + (b[0] - a[0]) * u, la = a[1] + (b[1] - a[1]) * u;
+        const sd = Math.round(lo * 1e5) * 31 + Math.round(la * 1e5);
+        if (rnd(sd) > 0.5) continue;
+        const nx = lo - cxl, ny = la - cyl, L = Math.hypot(nx, ny) || 1;
+        const reach = 0.00035 + rnd(sd + 1) * 0.00035;
+        const [x1, y1] = project(lo, la);
+        const [x2, y2] = project(lo + nx / L * reach, la + ny / L * reach);
+        ctx.strokeStyle = 'rgba(154,132,98,.9)';
+        ctx.lineWidth = Math.max(0.7, 0.00004 * pxPerDeg);
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        if (state.t < 1521.414) {                    // canoes moored alongside
+          ctx.strokeStyle = 'rgba(74,58,42,.85)';
+          ctx.lineWidth = Math.max(0.6, 0.00003 * pxPerDeg);
+          for (let m = 0; m < 3; m++) {
+            const v = 0.35 + m * 0.22;
+            const mx = x1 + (x2 - x1) * v, my = y1 + (y2 - y1) * v;
+            const off = (m % 2 ? 1 : -1) * Math.max(1.2, 0.00006 * pxPerDeg);
+            ctx.beginPath();
+            ctx.moveTo(mx - (y2 - y1) / L * 0 + off, my);
+            ctx.lineTo(mx + off, my + Math.max(1.6, 0.00007 * pxPerDeg));
+            ctx.stroke();
+          }
+        }
+      }
+    }
+  }
+
+  // 3e — the fort of Xoloc where the southern causeway forks: the sources'
+  //      two-towered work, and the meeting place of 8 November 1519
+  if (lod >= 1 && phase !== 'colonial') {
+    const [fx, fy] = project(-99.1350, 19.4060);
+    const fw = Math.max(3, 0.00018 * pxPerDeg);
+    ctx.fillStyle = 'rgba(20,15,11,.4)';
+    ctx.fillRect(fx - fw / 2 + fw * 0.25, fy - fw / 2 + fw * 0.28, fw, fw * 0.8);
+    ctx.fillStyle = 'rgb(218,206,176)';
+    ctx.fillRect(fx - fw / 2, fy - fw / 2, fw, fw * 0.8);
+    ctx.fillStyle = 'rgb(196,182,150)';
+    ctx.fillRect(fx - fw / 2, fy - fw / 2, fw * 0.3, fw * 0.3);
+    ctx.fillRect(fx + fw * 0.2, fy - fw / 2, fw * 0.3, fw * 0.3);
+  }
+
   // 3c — canoes working the city canals: the traffic that fed a lake city,
   //      which stops when the brigantines take the water (1 Jun 1521)
   if (lod >= 1 && state.t < 1521.414) {
@@ -787,7 +837,28 @@ function drawCityFabric() {
           : blockRoof > 0.50 ? ROOFS[Math.floor(rnd(s2 + 4) * 2) + 3]
                              : ROOFS[Math.floor(rnd(s2 + 4) * 3)];
         ctx.fillStyle = roof;
-        ctx.fillRect(bx, by, bw, bh);
+        if (colonial) {
+          // the colonial block is a RING around a patio — the signature of
+          // the centro's fabric, and of every traza house of the period
+          ctx.fillRect(bx, by, bw, bh);
+          ctx.fillStyle = 'rgba(150,132,104,.55)';
+          ctx.fillRect(bx + bw * 0.26, by + bh * 0.26, bw * 0.48, bh * 0.48);
+          if (lod >= 2 && rnd(s2 + 12) > 0.45) {     // a tree in the patio
+            ctx.fillStyle = 'rgba(66,100,56,.9)';
+            ctx.beginPath();
+            ctx.arc(bx + bw * 0.5, by + bh * 0.5, Math.max(0.8, bw * 0.10), 0, 7);
+            ctx.fill();
+          }
+          ctx.fillStyle = roof;
+        } else {
+          ctx.fillRect(bx, by, bw, bh);
+          // some houses turn a corner: an L rather than a bar
+          if (rnd(s2 + 21) > 0.62) {
+            const sw = bw * (0.30 + rnd(s2 + 22) * 0.25);
+            const sh = bh * (0.55 + rnd(s2 + 23) * 0.35);
+            ctx.fillRect(bx + (rnd(s2 + 24) > 0.5 ? bw - sw : 0), by + bh, sw, sh * 0.5);
+          }
+        }
         if (lod >= 1) {                              // the lit and shaded faces
           ctx.fillStyle = charred ? 'rgba(20,16,12,.75)' : 'rgba(116,98,74,.46)';
           ctx.fillRect(bx, by + bh, bw, Math.max(0.5, hgt * 0.9));
