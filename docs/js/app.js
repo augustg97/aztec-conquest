@@ -178,6 +178,18 @@ function rnd(s) {
   return x - Math.floor(x);
 }
 
+/* Smooth value noise on the world grid — for things that come in patches
+ * (woodland stands, worked fields) rather than per-point coin flips. */
+function smoothNoise(lon, lat, cell) {
+  const gx = Math.floor(lon / cell), gy = Math.floor(lat / cell);
+  const fx = lon / cell - gx, fy = lat / cell - gy;
+  const v = (a, b) => rnd(a * 3701 + b * 8117);
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+  const top = v(gx, gy) * (1 - sx) + v(gx + 1, gy) * sx;
+  const bot = v(gx, gy + 1) * (1 - sx) + v(gx + 1, gy + 1) * sx;
+  return top * (1 - sy) + bot * sy;
+}
+
 function pointInPoly(lat, lon, pts) {
   let inside = false;
   for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
@@ -206,13 +218,47 @@ const cvs = $('#world');
 const ctx = cvs.getContext('2d');
 const TERRAIN_IMG = {};
 
+/* Each terrain image is sampled ONCE at load into a small grid. The ground
+ * detail then reads that array instead of calling getImageData on the live
+ * canvas every frame — the readback stalled the pipeline at 64 ms/frame. */
+const TERRAIN_SAMP = {};
+
+function sampleTerrain(id, img) {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 160;
+  const x = c.getContext('2d', {willReadFrequently: true});
+  x.drawImage(img, 0, 0, c.width, c.height);
+  let data;
+  try { data = x.getImageData(0, 0, c.width, c.height).data; } catch (e) { return; }
+  let sum = 0;
+  for (let i = 0; i < data.length; i += 4) sum += (data[i] + data[i + 1] + data[i + 2]) / 3;
+  TERRAIN_SAMP[id] = {w: c.width, h: c.height, data,
+                      mean: sum / (data.length / 4)};
+}
+
 function preloadTerrain() {
   for (const tr of TERRAIN) for (const s of ['dry', 'wet']) {
     const im = new Image();
-    im.onload = () => render();
+    im.onload = () => { if (s === 'dry') sampleTerrain(tr.id, im); render(); };
     im.src = `img/terrain-${tr.id}-${s}.jpg`;
     TERRAIN_IMG[tr.id + '-' + s] = im;
   }
+}
+
+/* Finest loaded terrain level covering the point → [r,g,b,mean]. */
+const SAMP_ORDER = ['city', 'basin', 'corridor', 'meso'];
+function sampleGround(lon, lat) {
+  for (const id of SAMP_ORDER) {
+    const s = TERRAIN_SAMP[id];
+    if (!s) continue;
+    const v = (D.meta.terrain || D.meta.views)[id];
+    if (!v || lon < v.lon0 || lon > v.lon1 || lat < v.lat0 || lat > v.lat1) continue;
+    const ix = Math.min(s.w - 1, (lon - v.lon0) / (v.lon1 - v.lon0) * s.w | 0);
+    const iy = Math.min(s.h - 1, (v.lat1 - lat) / (v.lat1 - v.lat0) * s.h | 0);
+    const o = (iy * s.w + ix) * 4;
+    return [s.data[o], s.data[o + 1], s.data[o + 2], s.mean];
+  }
+  return null;
 }
 
 function sizeCanvas() {
@@ -285,9 +331,117 @@ function drawWorld() {
       ctx.stroke();
     }
   }
+  drawGroundDetail();
   if (state.layers.city) {
     drawSettlements();
     drawCityFabric();
+  }
+}
+
+// ------------------------------------------------------- ground detail --
+/* Below the data's own grain (ARCHITECTURE-PATTERNS §7 — procedural detail).
+ * MEASURED: the city basemap is already 16.6 m/px against SRTM's ~30 m native
+ * grain, while street zoom asks for ~1.1 m/px. No tile pyramid can close that
+ * — the elevation does not exist below 30 m. What does exist is the measured
+ * surface's own colour, so the detail is GROWN from it: woodland clumps where
+ * the render is dark and green, dry scrub where it is pale, terraced field
+ * lines on worked ground near the towns, nothing at all on water. Positions
+ * are world-anchored and deterministic, so the ground holds still when you
+ * pan and replays identically when you scrub. */
+const auxC = document.createElement('canvas');
+auxC.width = 200; auxC.height = 130;
+const auxX = auxC.getContext('2d', {willReadFrequently: true});
+
+/* Grain. Upscaling a 30 m raster to 1 m leaves smooth smear where real ground
+ * has texture; one tiled noise fill in overlay mode restores it for the cost
+ * of a single draw, world-anchored modulo the tile so it does not swim. */
+let noisePat = null;
+function ensureNoise() {
+  if (noisePat) return;
+  const n = document.createElement('canvas');
+  n.width = n.height = 64;
+  const nx = n.getContext('2d');
+  const id = nx.createImageData(64, 64);
+  // grey grain carried in the ALPHA channel: a plain source-over fill then
+  // costs one draw, where an overlay blend cost tens of milliseconds
+  for (let i = 0; i < 64 * 64; i++) {
+    const r = rnd(i * 1.7);
+    id.data[i * 4] = id.data[i * 4 + 1] = id.data[i * 4 + 2] = r > 0.5 ? 236 : 24;
+    id.data[i * 4 + 3] = Math.abs(r - 0.5) * 150;
+  }
+  nx.putImageData(id, 0, 0);
+  noisePat = ctx.createPattern(n, 'repeat');
+}
+
+function drawGrain(strength) {
+  ensureNoise();
+  if (!noisePat) return;
+  const [ax, ay] = project(-99.0, 19.4);
+  ctx.save();
+  ctx.globalAlpha = strength;
+  ctx.translate(((ax % 64) + 64) % 64 - 64, ((ay % 64) + 64) % 64 - 64);
+  ctx.fillStyle = noisePat;
+  ctx.fillRect(0, 0, PROJ.W + 128, PROJ.H + 128);
+  ctx.restore();
+}
+
+function drawGroundDetail() {
+  const span = state.cam.span;
+  if (span > 0.30 || !PROJ.W) return;
+  // grain first, so vegetation and fabric sit crisply on top of it
+  drawGrain(Math.min(0.34, 0.08 + (0.30 - span) * 1.0));
+  const cols = 92;
+  const step = span / cols;
+  const lon0 = state.cam.cx - span / 2, lon1 = state.cam.cx + span / 2;
+  const latH = PROJ.H / PROJ.s;
+  const lat0 = state.cam.cy - latH / 2, lat1 = state.cam.cy + latH / 2;
+  const fp = CITY_BY_ID_FP();
+  const sz = Math.max(0.9, step * PROJ.s * 0.32);
+  const q = v => Math.floor(v / step) * step;
+  // woodland is what is DARKER than its surroundings, not what is green (the
+  // wet-season palette is green everywhere, which blanketed the first attempt)
+  for (let lat = q(lat0); lat < lat1 + step; lat += step) {
+    for (let lon = q(lon0); lon < lon1 + step; lon += step) {
+      const s = Math.round(lon * 1e6) * 7919 + Math.round(lat * 1e6);
+      const smp = sampleGround(lon, lat);
+      if (!smp) continue;
+      const [R, G, B, meanLum] = smp;
+      if (B > G + 6) continue;                     // water, in any of its blues
+      if (fp && pointInPoly(lat, lon, fp)) continue;   // the island has its fabric
+      const [x, y] = project(lon + (rnd(s) - 0.5) * step * 0.95,
+                             lat + (rnd(s + 1) - 0.5) * step * 0.95);
+      if (x < 0 || y < 0 || x > PROJ.W || y > PROJ.H) continue;
+      const lum = (R + G + B) / 3;
+      // LOCAL contrast, not the whole image's: a dark valley must not read as
+      // wall-to-wall forest just because it is darker than the map average
+      let ls = 0, ln = 0;
+      for (const [dl, dt] of [[0.0045, 0], [-0.0045, 0], [0, 0.0045], [0, -0.0045]]) {
+        const nb = sampleGround(lon + dl, lat + dt);
+        if (nb) { ls += (nb[0] + nb[1] + nb[2]) / 3; ln++; }
+      }
+      const local = ln ? (ls + lum) / (ln + 1) : meanLum;
+      const dark = Math.max(0, (local - lum) / 15);        // 0 at local mean
+      // stands, not a blanket: smooth noise at ~1 km decides where woodland is
+      const st = smoothNoise(lon, lat, 0.010);
+      const treeP = Math.min(0.85, dark * 1.1) * (st > 0.56 ? 1 : 0.10);
+      if (rnd(s + 2) < treeP) {                    // woodland
+        ctx.fillStyle = `rgba(${Math.max(26, R * 0.50) | 0},${Math.max(44, G * 0.62) | 0},` +
+                        `${Math.max(24, B * 0.44) | 0},.7)`;
+        ctx.beginPath();
+        ctx.arc(x, y, sz * (0.6 + rnd(s + 3) * 0.7), 0, 7);
+        ctx.fill();
+      } else if (rnd(s + 4) < 0.10) {              // dry scrub and stone
+        ctx.fillStyle = `rgba(${(R * 0.84) | 0},${(G * 0.82) | 0},${(B * 0.72) | 0},.32)`;
+        ctx.fillRect(x, y, sz * 0.7, sz * 0.5);
+      }
+      // terraced plots on the worked ground around the towns
+      if (span < 0.06 && smoothNoise(lon, lat, 0.010) < 0.42 && rnd(s + 6) < 0.16) {
+        ctx.strokeStyle = `rgba(${(R * 0.72) | 0},${(G * 0.72) | 0},${(B * 0.6) | 0},.4)`;
+        ctx.lineWidth = Math.max(0.4, sz * 0.18);
+        const w = sz * (3 + rnd(s + 7) * 5);
+        ctx.beginPath(); ctx.moveTo(x - w / 2, y); ctx.lineTo(x + w / 2, y); ctx.stroke();
+      }
+    }
   }
 }
 
