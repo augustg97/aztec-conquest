@@ -507,8 +507,24 @@ function drawSettlement(e, cx, cy, R, Rpx, st, phase) {
     ctx.stroke();
   }
 
+  // THE TOWN'S PLAN. Mesoamerican settlements are not one shape: Tlaxcallan
+  // was four separate cabeceras on their own hills; the lakeshore towns ran
+  // long against the water; the road towns clustered on their plaza. The plan
+  // is chosen per settlement so no two read as the same city.
+  const planV = rnd(seed + 41);
+  const plan = e.kind === 'Independent polity' && planV < 0.6 ? 'dispersed'
+             : planV < 0.30 ? 'dispersed' : planV < 0.66 ? 'compact' : 'linear';
+  const axis = (rnd(seed + 43) - 0.5) * 2.2;        // the long axis, for linear towns
+  const wards = [];
+  if (plan === 'dispersed') {
+    const nW = 3 + Math.floor(rnd(seed + 45) * 2);
+    for (let i = 0; i < nW; i++) {
+      const a = i / nW * Math.PI * 2 + rnd(seed + 50 + i);
+      wards.push([cx + Math.cos(a) * Rpx * 0.55, cy + Math.sin(a) * Rpx * 0.48]);
+    }
+  }
   // the house compounds: dense at the core, dispersed at the edge
-  const LOTN = lod >= 2 ? 13 : lod >= 1 ? 9 : 6;
+  const LOTN = lod >= 2 ? 21 : lod >= 1 ? 12 : 7;
   const cell = (Rpx * 1.9) / LOTN;
   const hg = Math.max(0.5, cell * 0.16);
   for (let iy = 0; iy < LOTN; iy++) {
@@ -517,10 +533,24 @@ function drawSettlement(e, cx, cy, R, Rpx, st, phase) {
       const jx = (rnd(s2) - 0.5) * cell * 0.6, jy = (rnd(s2 + 1) - 0.5) * cell * 0.6;
       const x = cx - Rpx * 0.95 + ix * cell + jx;
       const y = cy - Rpx * 0.82 + iy * cell * 0.9 + jy;
-      const d = Math.hypot((x - cx) / Rpx, (y - cy) / (Rpx * 0.86));
-      if (d > 1.02) continue;
+      let d;
+      if (plan === 'dispersed') {
+        d = 9;
+        for (const [wx, wy] of wards)
+          d = Math.min(d, Math.hypot(x - wx, y - wy) / (Rpx * 0.42));
+        if (d > 1.02) continue;
+      } else if (plan === 'linear') {
+        const dx = x - cx, dy = y - cy;
+        const u = dx * Math.cos(axis) + dy * Math.sin(axis);
+        const v = -dx * Math.sin(axis) + dy * Math.cos(axis);
+        d = Math.hypot(u / (Rpx * 1.15), v / (Rpx * 0.48));
+        if (d > 1.02) continue;
+      } else {
+        d = Math.hypot((x - cx) / Rpx, (y - cy) / (Rpx * 0.86));
+        if (d > 1.02) continue;
+      }
       if (rnd(s2 + 2) > 1.0 - d * 0.62) continue;   // thins outward
-      if (d < 0.20) continue;                       // the plaza stays open
+      if (plan !== 'dispersed' && d < 0.20) continue;   // the plaza stays open
       const bw = cell * (0.34 + rnd(s2 + 3) * 0.30);
       const bh = cell * (0.28 + rnd(s2 + 4) * 0.26);
       if (lod >= 1) {
@@ -566,6 +596,23 @@ function drawSettlement(e, cx, cy, R, Rpx, st, phase) {
     if (lod >= 1 && !sacked) {
       ctx.fillStyle = 'rgba(168,74,56,1)';
       ctx.fillRect(tx + tw * 0.36, ty + th * 0.30, tw * 0.28, th * 0.26);
+    }
+    // Chōlōllān's Tlachihualtepetl — the greatest pyramid by volume in the
+    // Americas, already ancient and grassed over in 1519, and the ground the
+    // massacre happened on
+    if (e.id === 'cholula' && lod >= 1) {
+      const gw = Rpx * 0.62, gh = Rpx * 0.52;
+      const gx2 = cx - Rpx * 0.62, gy2 = cy - Rpx * 0.10;
+      ctx.fillStyle = 'rgba(20,15,11,.4)';
+      ctx.fillRect(gx2 + gw * 0.14, gy2 + gh * 0.16, gw, gh);
+      for (let s = 0; s < 4; s++) {
+        const k = s / 4;
+        ctx.fillStyle = `rgb(${118 + s * 10},${132 + s * 10},${86 + s * 8})`;
+        ctx.fillRect(gx2 + gw * k * 0.15, gy2 + gh * k * 0.15,
+                     gw * (1 - k * 0.30), gh * (1 - k * 0.30));
+      }
+      ctx.fillStyle = 'rgb(200,186,156)';            // the temple on its summit
+      ctx.fillRect(gx2 + gw * 0.40, gy2 + gh * 0.38, gw * 0.20, gh * 0.20);
     }
   } else {
     const cw = pw * 0.7, ch = pw * 0.5;
@@ -687,6 +734,26 @@ function drawCityFabric() {
       ctx.lineWidth = Math.max(0.5, 0.00003 * pxPerDeg);
       ctx.strokeStyle = 'rgba(120,104,74,.55)';
       ctx.stroke();
+      // THE BREACHES: the defenders cut the causeways at their bridges and
+      // the attackers spent the siege filling them in again — the single
+      // tactical fact the whole siege turned on. Gaps close as it advances.
+      if (phase === 'siege') {
+        const prog = Math.max(0, Math.min(1,
+          (state.t - D.meta.cityPhases.siege) / 0.20));
+        const pts = f.points;
+        for (let b = 0; b < 3; b++) {
+          if (prog > (b + 1) / 3.4) continue;        // filled by now
+          const u = 0.25 + b * 0.25;
+          const seg = u * (pts.length - 1), si = Math.floor(seg), fu = seg - si;
+          if (si + 1 >= pts.length) continue;
+          const lo = pts[si][0] + (pts[si + 1][0] - pts[si][0]) * fu;
+          const la = pts[si][1] + (pts[si + 1][1] - pts[si][1]) * fu;
+          const [gx3, gy3] = project(lo, la);
+          const gr = Math.max(1.5, 0.00012 * pxPerDeg);
+          ctx.fillStyle = 'rgba(70,116,150,.95)';
+          ctx.beginPath(); ctx.arc(gx3, gy3, gr, 0, 7); ctx.fill();
+        }
+      }
     }
   }
 
