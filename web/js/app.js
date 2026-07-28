@@ -723,8 +723,10 @@ function drawCityFabric() {
 
   // 4 — the lots: courtyard compounds, the Mexica house form (Calnek: several
   //     structures around a patio, on a lot reached from canal and street)
-  const ROOFS = ['rgba(226,214,186,1)', 'rgba(214,198,164,1)', 'rgba(200,182,150,1)',
-                 'rgba(188,166,132,1)', 'rgba(232,224,200,1)'];
+  // lime-plastered white through mud-brown, plus the darker earth roofs —
+  // the tonal spread an aerial view actually shows
+  const ROOFS = ['rgba(232,224,200,1)', 'rgba(220,206,176,1)', 'rgba(206,188,154,1)',
+                 'rgba(186,162,126,1)', 'rgba(166,142,110,1)', 'rgba(150,126,98,1)'];
   const THATCH = ['rgba(176,150,106,1)', 'rgba(160,136,98,1)'];
   const hgt = Math.max(0.7, 0.000035 * pxPerDeg);   // one storey, in pixels
   let drawn = 0;
@@ -757,6 +759,14 @@ function drawCityFabric() {
       // the compound: 2-4 wings around a patio, or a colonial block-house
       const wings = colonial ? 1 : elite ? 4 : 2 + Math.floor(rnd(seed + 5) * 3);
       const scale = elite ? 1.35 : garden ? 0.8 : 1;
+      // A BLOCK SHARES ITS GRAIN: real fabric grows block by block, so the
+      // compounds of one block share an orientation off the canal line and a
+      // roofing material, and the next block is visibly a different quarter.
+      const ang = (rnd(bSeed + 3) - 0.5) * 0.30;
+      const blockRoof = rnd(bSeed + 11);
+      ctx.save();
+      ctx.translate(px, py - lotPx);
+      if (Math.abs(ang) > 0.005) ctx.rotate(ang);
       for (let w = 0; w < wings; w++) {
         const s2 = seed + w * 37;
         const long = (colonial ? 0.80 : 0.34 + rnd(s2 + 1) * 0.22) * scale;
@@ -764,27 +774,29 @@ function drawCityFabric() {
         const horiz = colonial ? false : (w % 2 === 0);
         const bw = (horiz ? long : shortS) * lotPx;
         const bh = (horiz ? shortS : long) * lotPx;
-        const ox = (colonial ? 0.10 : (w === 0 ? 0.06 : w === 1 ? 0.55 : 0.20)) * lotPx;
-        const oy = (colonial ? 0.10 : (w === 2 ? 0.60 : w === 1 ? 0.10 : 0.08)) * lotPx;
-        const bx = px + ox, by = py - lotPx + oy;
+        const bx = (colonial ? 0.10 : (w === 0 ? 0.06 : w === 1 ? 0.55 : 0.20)) * lotPx;
+        const by = (colonial ? 0.10 : (w === 2 ? 0.60 : w === 1 ? 0.10 : 0.08)) * lotPx;
         if (lod >= 1) {                              // cast shadow, sun from NW
-          ctx.fillStyle = 'rgba(28,22,16,.34)';
-          ctx.fillRect(bx + hgt * SUN.dx * 1.7, by + hgt * SUN.dy * 1.7, bw, bh);
+          ctx.fillStyle = 'rgba(28,22,16,.36)';
+          ctx.fillRect(bx + hgt * SUN.dx * 1.9, by + hgt * SUN.dy * 1.9, bw, bh);
         }
-        const roof = charred ? 'rgba(38,30,24,1)'
-          : colonial ? 'rgba(206,148,120,1)'         // the colonial tile city
-          : (rnd(s2 + 3) > 0.72 ? THATCH[Math.floor(rnd(s2 + 4) * 2)]
-                                : ROOFS[Math.floor(rnd(s2 + 4) * ROOFS.length)]);
+        // material by block, with per-house variation inside it
+        const roof = charred ? `rgba(${34 + rnd(s2) * 14 | 0},${27 + rnd(s2) * 10 | 0},22,1)`
+          : colonial ? (blockRoof > 0.45 ? 'rgba(198,132,104,1)' : 'rgba(214,168,138,1)')
+          : blockRoof > 0.74 ? THATCH[Math.floor(rnd(s2 + 4) * 2)]
+          : blockRoof > 0.50 ? ROOFS[Math.floor(rnd(s2 + 4) * 2) + 3]
+                             : ROOFS[Math.floor(rnd(s2 + 4) * 3)];
         ctx.fillStyle = roof;
         ctx.fillRect(bx, by, bw, bh);
         if (lod >= 1) {                              // the lit and shaded faces
-          ctx.fillStyle = charred ? 'rgba(20,16,12,.75)' : 'rgba(120,102,78,.42)';
-          ctx.fillRect(bx, by + bh, bw, Math.max(0.5, hgt * 0.8));
-          ctx.fillStyle = 'rgba(255,248,228,.22)';
-          ctx.fillRect(bx, by - Math.max(0.4, hgt * 0.4), bw, Math.max(0.4, hgt * 0.4));
+          ctx.fillStyle = charred ? 'rgba(20,16,12,.75)' : 'rgba(116,98,74,.46)';
+          ctx.fillRect(bx, by + bh, bw, Math.max(0.5, hgt * 0.9));
+          ctx.fillStyle = 'rgba(255,248,228,.24)';
+          ctx.fillRect(bx, by - Math.max(0.4, hgt * 0.45), bw, Math.max(0.4, hgt * 0.45));
         }
         drawn++;
       }
+      ctx.restore();
       // trees: a patio tree, and a stand of them where a block is a garden
       if (lod >= 2 && !colonial && (garden || rnd(seed + 9) > 0.55)) {
         ctx.fillStyle = garden ? 'rgba(56,92,46,.92)' : 'rgba(62,96,52,.9)';
@@ -797,6 +809,31 @@ function drawCityFabric() {
           ctx.fill();
         }
       }
+    }
+  }
+
+  // 4b — the great market of Tlatelōlco, thick with people. The chroniclers'
+  //      astonishment ("sixty thousand souls trading daily") is the one crowd
+  //      the sources insist on; it thins to nothing once the siege closes.
+  const mkt = CITY_BY_ID['tlatelolco-market'];
+  if (mkt && lod >= 1 && phase !== 'colonial') {
+    const xs = mkt.points.map(q => q[0]), ys = mkt.points.map(q => q[1]);
+    const m0 = Math.min(...xs), m1 = Math.max(...xs);
+    const n0 = Math.min(...ys), n1 = Math.max(...ys);
+    const trade = state.t < D.meta.cityPhases.siege ? 1
+      : Math.max(0, 1 - (state.t - D.meta.cityPhases.siege) / 0.10);
+    const nP = Math.round(260 * trade);
+    ctx.fillStyle = 'rgba(226,217,193,.85)';
+    const [mx0, my0] = project(m0, n1), [mx1, my1] = project(m1, n0);
+    ctx.fillRect(mx0, my0, mx1 - mx0, my1 - my0);
+    for (let i = 0; i < nP; i++) {
+      const lo = m0 + rnd(i * 2.3) * (m1 - m0);
+      const la = n0 + rnd(i * 5.7) * (n1 - n0);
+      const [qx, qy] = project(lo + Math.sin(state.t * 900 + i) * 0.000012,
+                               la + Math.cos(state.t * 760 + i) * 0.000010);
+      ctx.fillStyle = i % 5 ? 'rgba(66,52,40,.75)' : 'rgba(150,60,48,.7)';
+      const pSz = Math.max(0.7, LOT * pxPerDeg * 0.055);
+      ctx.fillRect(qx, qy, pSz, pSz);
     }
   }
 
@@ -836,6 +873,19 @@ function drawPrecinct(lon, lat, w, h, charLat, razeProg, lod, great) {
   // the plaza floor, then the serpent wall around it
   ctx.fillStyle = ruined ? 'rgba(64,54,44,.9)' : 'rgba(226,217,193,.95)';
   ctx.fillRect(x, y, W, H);
+  // the court is PAVED — the flagging is what makes it read as a floor rather
+  // than a blank, and the sources are emphatic about the polished surface
+  if (lod >= 1 && !ruined && W > 60) {
+    ctx.strokeStyle = 'rgba(186,170,134,.35)';
+    ctx.lineWidth = Math.max(0.3, W * 0.0035);
+    const n = 9;
+    ctx.beginPath();
+    for (let i = 1; i < n; i++) {
+      ctx.moveTo(x + W * i / n, y); ctx.lineTo(x + W * i / n, y + H);
+      ctx.moveTo(x, y + H * i / n); ctx.lineTo(x + W, y + H * i / n);
+    }
+    ctx.stroke();
+  }
   ctx.lineWidth = Math.max(1.4, W * 0.028);
   ctx.strokeStyle = ruined ? 'rgba(48,40,32,.95)' : 'rgba(150,130,92,.95)';
   ctx.strokeRect(x, y, W, H);
@@ -910,6 +960,24 @@ function drawPrecinct(lon, lat, w, h, charLat, razeProg, lod, great) {
     const [sx, sy] = project(lon - w * 0.06, lat - h * 0.26);
     ctx.fillStyle = ruined ? 'rgb(56,48,40)' : 'rgb(206,194,166)';
     ctx.fillRect(sx, sy, W * 0.13, H * 0.045);
+    // the calmecac ranges along the north and west walls — the schools and
+    // priests' houses that filled the court's edges
+    for (let i = 0; i < 6; i++) {
+      const rw = W * 0.115, rh = H * 0.06;
+      const rx2 = x + W * (0.08 + i * 0.145), ry2 = y + H * 0.045;
+      ctx.fillStyle = 'rgba(20,15,11,.28)';
+      ctx.fillRect(rx2 + rw * 0.1, ry2 + rh * 0.35, rw, rh);
+      ctx.fillStyle = ruined ? 'rgb(60,50,42)' : 'rgb(220,208,178)';
+      ctx.fillRect(rx2, ry2, rw, rh);
+      if (i < 4) {
+        const cw2 = W * 0.06, ch2 = H * 0.105;
+        const cx4 = x + W * 0.035, cy4 = y + H * (0.18 + i * 0.18);
+        ctx.fillStyle = 'rgba(20,15,11,.28)';
+        ctx.fillRect(cx4 + cw2 * 0.2, cy4 + ch2 * 0.2, cw2, ch2);
+        ctx.fillStyle = ruined ? 'rgb(58,48,40)' : 'rgb(214,202,172)';
+        ctx.fillRect(cx4, cy4, cw2, ch2);
+      }
+    }
     // smaller temples ringing the court
     for (let i = 0; i < 5; i++) {
       const a = 0.12 + i * 0.19;
