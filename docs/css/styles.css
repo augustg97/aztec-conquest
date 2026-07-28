@@ -187,6 +187,15 @@ input[type=range]{width:88px;accent-color:var(--accent)}
   0%{transform:translate(0,0) scale(.55);opacity:0}
   12%{opacity:.85}
   100%{transform:translate(9px,-30px) scale(2.1);opacity:0}}
+#smoke{position:absolute;width:26px;height:38px;pointer-events:none;z-index:6;
+  transform-origin:bottom center}
+#smoke .puff{background:rgba(70,64,58,.55)}
+#smoke .s2{left:12px;animation-delay:1.7s;background:rgba(55,50,46,.5)}
+#smoke .s3{left:2px;animation-delay:3.4s;background:rgba(90,82,74,.45)}
+#smoke .s4{left:16px;animation-delay:5.1s;background:rgba(60,56,52,.5)}
+.campanlab{font-size:10px;fill:rgba(220,208,180,.55);font-style:italic;
+  text-anchor:middle;letter-spacing:.14em;pointer-events:none;
+  paint-order:stroke;stroke:rgba(6,8,12,.6);stroke-width:2px}
 
 /* ------------------------------------------------------ substrate / people -- */
 .sealab{font-size:11px;fill:rgba(140,170,205,.5);font-style:italic;

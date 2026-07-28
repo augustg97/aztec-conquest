@@ -184,6 +184,7 @@ function render() {
 
   drawSubstrate();                                 // land, sea, sierra — always
   if (state.layers.water) drawWater();
+  if (state.layers.city) drawCity();
   if (state.layers.tribute) drawTribute();
   if (state.layers.track) drawTrack();
   if (state.layers.works) drawWorksHit();
@@ -232,7 +233,7 @@ function drawSubstrate() {
   for (const tr of TERRAIN) {
     const a = terrainAlpha(tr.id);
     if (a <= 0) continue;
-    const v = D.meta.views[tr.id];
+    const v = (D.meta.terrain || D.meta.views)[tr.id];
     const [x0, y0] = project(v.lon0, v.lat1);
     const [x1, y1] = project(v.lon1, v.lat0);
     if (x1 < -40 || y1 < -40 || x0 > PROJ.W + 40 || y0 > PROJ.H + 40) continue;
@@ -281,6 +282,16 @@ function updateAtmosphere(wet) {
     plume.style.top = (y - 30) + 'px';
     plume.style.transform = `scale(${Math.min(2.2, 1.6 / state.cam.span + 0.4)})`;
   }
+  // the razing: smoke stands over the city while it is being unmade
+  const smoke = $('#smoke');
+  const razing = state.t >= 1521.53 && state.t <= 1521.645 && state.cam.span < 2.5;
+  smoke.classList.toggle('hidden', !razing);
+  if (razing) {
+    const [x, y] = project(-99.132, 19.437);
+    smoke.style.left = (x - 12) + 'px';
+    smoke.style.top = (y - 34) + 'px';
+    smoke.style.transform = `scale(${Math.min(3, 0.9 / state.cam.span + 0.5)})`;
+  }
 }
 
 function xyAttrs(lon, lat) {
@@ -292,6 +303,24 @@ function xyAttrs(lon, lat) {
 // open. The layer label says "modelled"; the About panel carries the band.
 function drawEpidemic() {
   const g = el('g', {'data-layer': 'epidemic'});
+  // the wavefront: the modelled front's reach at t, expanding from the
+  // documented coastal seed — an isochrone of the network wave, drawn as the
+  // geographic circle it approximates
+  const fr = D.meta.epidemicFront;
+  if (fr && state.t > fr.t0 && state.t < 1521.9) {
+    const rkm = fr.kmPerYear * (state.t - fr.t0);
+    if (rkm < 1300) {
+      const [cx, cy] = project(fr.lon, fr.lat);
+      const rpx = (rkm / 110.6) * PROJ.s;
+      const fade = Math.max(0.15, 1 - rkm / 1300);
+      g.appendChild(el('circle', {cx, cy, r: rpx, fill: 'none',
+        stroke: '#8e6fb8', 'stroke-width': 1.4, 'stroke-dasharray': '7 7',
+        opacity: (0.5 * fade).toFixed(3)}));
+      g.appendChild(el('circle', {cx, cy, r: Math.max(0, rpx - 9), fill: 'none',
+        stroke: '#8e6fb8', 'stroke-width': 0.7, 'stroke-dasharray': '3 9',
+        opacity: (0.3 * fade).toFixed(3)}));
+    }
+  }
   for (const e of ALTEPETL) {
     if (!e.epidemic) continue;
     const [t0, t1] = e.epidemic;
@@ -331,6 +360,94 @@ function drawWater() {
   svg.appendChild(g);
 }
 
+// The phased city model (round 4): the same island, read across the timeline.
+const CITY_CARD_OF = {
+  'sacred-precinct': 'city-sacred-precinct',
+  'palace-axayacatl': 'city-palace-axayacatl',
+  'palace-moctezuma': 'city-palace-moctezuma',
+  'tlatelolco-precinct': 'city-sacred-precinct',
+  'tlatelolco-market': 'city-tlatelolco-market',
+  'axis-north-south': 'city-campan', 'axis-east-west': 'city-campan',
+  'canal-acequia-real': 'city-campan',
+  'chinampas-south': 'city-chinampas', 'chinampas-west': 'city-chinampas',
+  'chinampas-north': 'city-chinampas',
+  'traza': 'city-traza', 'church-san-francisco': 'city-san-francisco',
+  'church-first-cathedral': 'city-traza', 'colegio-tlatelolco-site': 'city-traza',
+};
+
+function cityPhaseAt(t) {
+  const p = D.meta.cityPhases;
+  if (t < p.siege) return 'mexica';
+  if (t < p.fall) return 'siege';
+  if (t < p.colonial) return 'ruin';
+  return 'colonial';
+}
+
+const CITY_STYLE = {
+  precinct: {fill: 'rgba(214,196,152,.45)', stroke: 'rgba(120,100,60,.8)', w: 1.2},
+  palace:   {fill: 'rgba(196,178,140,.38)', stroke: 'rgba(110,95,60,.7)', w: 1},
+  plaza:    {fill: 'rgba(222,210,180,.30)', stroke: 'rgba(120,105,70,.6)', w: 0.8},
+  axis:     {stroke: 'rgba(205,190,160,.55)', w: 1.6},
+  canal:    {stroke: 'rgba(96,150,196,.55)', w: 1.2},
+  chinampa: {fill: 'rgba(110,150,90,.30)', stroke: 'rgba(110,150,90,.5)', w: 0.7},
+  traza:    {fill: 'rgba(200,190,170,.16)', stroke: 'rgba(210,200,180,.7)', w: 1.1},
+  church:   {},
+};
+
+function drawCity() {
+  if (state.cam.span > 1.2) return;
+  const phase = cityPhaseAt(state.t);
+  const g = el('g', {'data-layer': 'city'});
+  for (const f of D.geo.city) {
+    if (f.phases.indexOf(phase) < 0) continue;
+    const st = CITY_STYLE[f.kind] || {};
+    if (f.kind === 'church') {
+      const [x, y] = project(f.points[0][0], f.points[0][1]);
+      g.appendChild(el('path', {d: `M${x},${y - 6} L${x},${y + 2} M${x - 3},${y - 3.5} L${x + 3},${y - 3.5}`,
+        stroke: '#e8dfc8', 'stroke-width': 1.6, fill: 'none'}));
+      continue;
+    }
+    if (f.kind === 'traza') {
+      // the grid itself, not just the outline
+      g.appendChild(el('path', {d: pathOf(f.points, true), fill: st.fill,
+        stroke: st.stroke, 'stroke-width': st.w}));
+      const [lon0, lat0] = f.points[0], [lon1, lat1] = f.points[2];
+      for (let i = 1; i < 5; i++) {
+        const lo = lon0 + (lon1 - lon0) * i / 5, la = lat0 + (lat1 - lat0) * i / 5;
+        g.appendChild(el('path', {d: pathOf([[lo, lat0], [lo, lat1]], false),
+          stroke: 'rgba(210,200,180,.35)', 'stroke-width': 0.7, fill: 'none'}));
+        g.appendChild(el('path', {d: pathOf([[lon0, la], [lon1, la]], false),
+          stroke: 'rgba(210,200,180,.35)', 'stroke-width': 0.7, fill: 'none'}));
+      }
+      continue;
+    }
+    const attrs = {d: pathOf(f.points, f.closed), 'stroke-width': st.w || 1};
+    if (f.closed) { attrs.fill = st.fill || 'none'; attrs.stroke = st.stroke || 'none'; }
+    else { attrs.fill = 'none'; attrs.stroke = st.stroke; }
+    if (f.kind === 'canal' && f.confidence === 'contested')
+      attrs['stroke-dasharray'] = '4 3';           // schematic alignments say so
+    const p = el('path', attrs);
+    const card = BY_ID[CITY_CARD_OF[f.id]];
+    if (card) p.addEventListener('click', ev => { ev.stopPropagation(); select(card); });
+    g.appendChild(p);
+  }
+  // razing: the city chars from the south as the siege advances
+  if (phase === 'siege' || phase === 'ruin') {
+    const fp = D.geo.features.find(f => f.id === 'city-footprint');
+    const prog = phase === 'ruin' ? 1 :
+      Math.max(0, Math.min(1, (state.t - D.meta.cityPhases.siege) / 0.20));
+    g.appendChild(el('path', {d: pathOf(fp.points, true),
+      fill: `rgba(20,14,10,${(0.45 * prog).toFixed(3)})`, stroke: 'none'}));
+  }
+  if (state.cam.span < 0.7 && (phase === 'mexica' || phase === 'siege')) {
+    for (const c of D.geo.campanLabels || []) {
+      const [x, y] = project(c.lon, c.lat);
+      g.appendChild(el('text', {x, y, class: 'campanlab'}, c.name));
+    }
+  }
+  svg.appendChild(g);
+}
+
 const WORK_STYLE = {
   causeway: {stroke: '#cbb894', w: 2.2, dash: null},
   aqueduct: {stroke: '#7fb8d8', w: 1.6, dash: '5 3'},
@@ -340,16 +457,39 @@ const WORK_STYLE = {
 function drawWorksHit() {
   if (state.cam.span > 3.5) return;                // sub-Basin detail
   const g = el('g', {'data-layer': 'works'});
+  const sg = D.meta.siege;
+  const inSiege = sg && state.t >= sg.start && state.t <= sg.end + 0.05;
+  const cutAt = {};
+  if (sg) sg.arteries.forEach(a => { cutAt[a.id] = a.cut; });
   for (const f of D.geo.features) {
     const st = WORK_STYLE[f.kind];
     if (!st) continue;
-    const attrs = {d: pathOf(f.points, false), fill: 'none', stroke: st.stroke,
-                   'stroke-width': st.w, 'stroke-linecap': 'round', class: 'work'};
+    let stroke = st.stroke, w = st.w;
+    // during the siege the arteries show their state: crimson once cut
+    if (inSiege && cutAt[f.id] !== undefined) {
+      if (state.t >= cutAt[f.id]) { stroke = '#b0453a'; w = st.w + 0.6; }
+      else { stroke = '#5f9e78'; }
+    }
+    const attrs = {d: pathOf(f.points, false), fill: 'none', stroke,
+                   'stroke-width': w, 'stroke-linecap': 'round', class: 'work'};
     if (st.dash) attrs['stroke-dasharray'] = st.dash;
     const p = el('path', attrs);
     const card = BY_ID[f.id];
     if (card) p.addEventListener('click', ev => { ev.stopPropagation(); select(card); });
     g.appendChild(p);
+  }
+  // the brigantines hold the lake once the canoe fleet is broken
+  const lakeCut = cutAt['lake'];
+  if (inSiege && lakeCut !== undefined && state.t >= lakeCut && state.cam.span < 1.2) {
+    for (const [blon, blat, rot] of [[-99.105, 19.445, 20], [-99.100, 19.415, -15],
+                                     [-99.118, 19.400, 40]]) {
+      const [x, y] = project(blon, blat);
+      const bob = 1.5 * Math.sin(state.t * 3000 + x);
+      g.appendChild(el('path', {
+        d: `M${x},${y - 4 + bob} L${x - 3.5},${y + 3 + bob} L${x + 3.5},${y + 3 + bob} Z`,
+        transform: `rotate(${rot} ${x} ${y})`,
+        fill: '#e3ddcc', stroke: 'rgba(0,0,0,.55)', 'stroke-width': 0.8}));
+    }
   }
   svg.appendChild(g);
 }
@@ -369,8 +509,12 @@ function drawTribute() {
     // arcs would otherwise flood the view with lines that carry no local information
     if (!onScreen(x, y, 160)) continue;
     const mx = (x + cx) / 2 + (y - cy) * 0.12, my = (y + cy) / 2 - (x - cx) * 0.12;
+    // dashes crawl toward the capital as time plays — tribute in motion,
+    // deterministic in t so scrubbing stays reproducible
     g.appendChild(el('path', {d: `M${x},${y} Q${mx},${my} ${cx},${cy}`,
-      fill: 'none', stroke: 'rgba(201,111,74,.30)', 'stroke-width': 0.8}));
+      fill: 'none', stroke: 'rgba(201,111,74,.34)', 'stroke-width': 0.9,
+      'stroke-dasharray': '4 6',
+      'stroke-dashoffset': String(-((state.t * 1200) % 10))}));
   }
   svg.appendChild(g);
 }
@@ -387,11 +531,32 @@ function drawTrack() {
     dPath += (i ? ' L' : 'M') + x.toFixed(1) + ',' + y.toFixed(1);
   }
   g.appendChild(el('path', {d: dPath, fill: 'none', stroke: '#d9d2c2',
-    'stroke-width': 1.6, 'stroke-dasharray': '6 4', opacity: 0.8}));
-  const head = done[done.length - 1];
-  const [hx, hy] = project(head.lon, head.lat);
-  g.appendChild(el('circle', {cx: hx, cy: hy, r: 4.5, fill: '#d9d2c2',
-    stroke: 'rgba(0,0,0,.6)', 'stroke-width': 1}));
+    'stroke-width': 1.6, 'stroke-dasharray': '6 4', opacity: 0.8,
+    'stroke-dashoffset': String(-((state.t * 1500) % 10))}));
+  // THE COLUMN, moving: between its dated waypoints the army is drawn in
+  // transit — position interpolated in t, so playback shows the march itself
+  const next = TRACK_EVENTS.find(e => e.t > state.t);
+  const last = done[done.length - 1];
+  let hx, hy, marching = false;
+  if (next && state.t <= 1521.40) {
+    const f = (state.t - last.t) / (next.t - last.t);
+    const [x0, y0] = project(last.lon, last.lat);
+    const [x1, y1] = project(next.lon, next.lat);
+    hx = x0 + (x1 - x0) * f; hy = y0 + (y1 - y0) * f;
+    marching = f > 0.02 && f < 0.98;
+  } else {
+    [hx, hy] = project(last.lon, last.lat);
+  }
+  if (state.t <= 1521.45) {
+    const pulse = 1 + 0.18 * Math.sin(state.t * 2600);
+    g.appendChild(el('circle', {cx: hx, cy: hy, r: 7 * pulse, fill: 'none',
+      stroke: 'rgba(217,210,194,.55)', 'stroke-width': 1.2}));
+    g.appendChild(el('circle', {cx: hx, cy: hy, r: 3.4, fill: '#efe9da',
+      stroke: 'rgba(0,0,0,.65)', 'stroke-width': 1}));
+    if (marching)
+      g.appendChild(el('text', {x: hx + 10, y: hy + 3.5, class: 'mklab'},
+        'the column, marching'));
+  }
   svg.appendChild(g);
 }
 
@@ -430,22 +595,92 @@ const KIND_GLYPH = {battle: '#d9a441', massacre: '#c0392b', siege: '#e0a458',
                     political: '#5aa9e6', campaign: '#d9d2c2', epidemic: '#8e6fb8',
                     aftermath: '#8a8f98', religious: '#4a9a8f'};
 
+/* Kind-specific marks: a battle is not a treaty is not a plague. */
+function glyphEl(kind, x, y, c) {
+  const S = 'rgba(0,0,0,.6)';
+  switch (kind) {
+    case 'battle':
+      return el('path', {d: `M${x},${y - 5.5} L${x + 1.6},${y - 1.6} L${x + 5.5},${y} ` +
+        `L${x + 1.6},${y + 1.6} L${x},${y + 5.5} L${x - 1.6},${y + 1.6} L${x - 5.5},${y} ` +
+        `L${x - 1.6},${y - 1.6} Z`, fill: c, stroke: S, 'stroke-width': 1});
+    case 'massacre':
+      return el('path', {d: `M${x - 4.5},${y - 3.6} L${x + 4.5},${y - 3.6} L${x},${y + 4.6} Z`,
+        fill: c, stroke: S, 'stroke-width': 1});
+    case 'epidemic':
+      return el('path', {d: `M${x - 1.6},${y - 5} h3.2 v3.4 h3.4 v3.2 h-3.4 v3.4 h-3.2 ` +
+        `v-3.4 h-3.4 v-3.2 h3.4 Z`, fill: c, stroke: S, 'stroke-width': 1});
+    case 'political':
+      return el('circle', {cx: x, cy: y, r: 4, fill: c, stroke: S, 'stroke-width': 1});
+    case 'religious': {
+      const gg = el('g', {});
+      gg.appendChild(el('circle', {cx: x, cy: y, r: 4, fill: 'none', stroke: c,
+        'stroke-width': 1.6}));
+      gg.appendChild(el('circle', {cx: x, cy: y, r: 1.4, fill: c}));
+      return gg;
+    }
+    case 'aftermath':
+      return el('rect', {x: x - 3.4, y: y - 3.4, width: 6.8, height: 6.8,
+        fill: c, stroke: S, 'stroke-width': 1});
+    default:      // campaign, siege: the diamond
+      return el('rect', {x: x - 3.6, y: y - 3.6, width: 7.2, height: 7.2,
+        transform: `rotate(45 ${x} ${y})`, fill: c, stroke: S, 'stroke-width': 1});
+  }
+}
+
 function drawEvents() {
   const win = inCampaign(state.t) ? 0.055 : 0.45;
   const g = el('g', {'data-layer': 'events'});
+  const visible = [];
   for (const ev of D.eventsFull) {
     const dt = state.t - ev.t;
-    if (dt < -win * 0.3 || dt > win) continue;      // appear at the date, linger after
+    if (dt < -win * 0.3 || dt > win) continue;
     const [x, y] = project(ev.lon, ev.lat);
     if (!onScreen(x, y)) continue;
-    const a = 1 - Math.max(0, dt) / win;
-    const c = KIND_GLYPH[ev.kind] || '#ccc';
-    const mk = el('g', {class: 'mk evmk', opacity: 0.25 + 0.75 * a});
-    mk.appendChild(el('rect', {x: x - 3.6, y: y - 3.6, width: 7.2, height: 7.2,
-      transform: `rotate(45 ${x} ${y})`, fill: c, stroke: 'rgba(0,0,0,.6)',
-      'stroke-width': 1}));
-    mk.appendChild(el('text', {x: x + 8, y: y + 3.5, class: 'mklab evlab'}, ev.name));
-    mk.addEventListener('click', evn => { evn.stopPropagation(); select(ev); });
+    visible.push({ev, x, y, dt});
+  }
+  // violence leaves a mark: battles, massacres and sieges pulse expanding
+  // rings for a few days after their date — a pure function of t, so
+  // scrubbing replays them identically
+  for (const v of visible) {
+    if (!/battle|massacre|siege/.test(v.ev.kind)) continue;
+    const dur = v.ev.precision === 'day' ? 0.028 : 0.06;
+    if (v.dt < 0 || v.dt > dur) continue;
+    const ph = v.dt / dur;
+    const base = v.ev.kind === 'siege' ? '224,132,64' : '190,60,45';
+    for (const off of [0, 0.33, 0.66]) {
+      const p = (ph + off) % 1;
+      g.appendChild(el('circle', {cx: v.x, cy: v.y, r: 6 + p * 26, fill: 'none',
+        stroke: `rgba(${base},${(0.55 * (1 - p) * (1 - ph * 0.5)).toFixed(3)})`,
+        'stroke-width': 2 - p}));
+    }
+  }
+  // markers + collision-avoided labels: stack instead of overprint, and past
+  // four stacked labels show the marker alone (the card still carries it)
+  const boxes = [];
+  visible.sort((a, b) => a.y - b.y || a.x - b.x);
+  for (const v of visible) {
+    const a = 1 - Math.max(0, v.dt) / win;
+    const c = KIND_GLYPH[v.ev.kind] || '#ccc';
+    const mk = el('g', {class: 'mk evmk', opacity: 0.3 + 0.7 * a});
+    mk.appendChild(glyphEl(v.ev.kind, v.x, v.y, c));
+    const wpx = v.ev.name.length * 5.3 + 10;
+    let ly = v.y, placed = false;
+    for (let slot = 0; slot < 4 && !placed; slot++) {
+      const cand = v.y + slot * 13;
+      if (!boxes.some(b => Math.abs(b.y - cand) < 12 &&
+                           v.x + 8 < b.x + b.w && v.x + 8 + wpx > b.x)) {
+        ly = cand; placed = true;
+      }
+    }
+    if (placed) {
+      boxes.push({x: v.x + 8, y: ly, w: wpx});
+      if (ly !== v.y)
+        mk.appendChild(el('path', {d: `M${v.x + 5},${v.y} L${v.x + 8},${ly - 3}`,
+          stroke: 'rgba(200,195,180,.4)', 'stroke-width': 0.7, fill: 'none'}));
+      mk.appendChild(el('text', {x: v.x + 9, y: ly + 3.5, class: 'mklab evlab'},
+        v.ev.name));
+    }
+    mk.addEventListener('click', evn => { evn.stopPropagation(); select(v.ev); });
     g.appendChild(mk);
   }
   svg.appendChild(g);

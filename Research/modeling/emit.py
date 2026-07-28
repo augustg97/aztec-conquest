@@ -322,6 +322,90 @@ def build_entities():
             "sources": [g["source"]],
         })
 
+    # the city model's cards (round 4) — phase-aware: the same place, read in
+    # 1519 and in 1540, tells the before and the after
+    _fall = t_of_julian(1521, 8, 13)
+    _col = t_of_julian(1522, 1, 15)
+    CITY_CARDS = [
+        ("city-sacred-precinct", "The sacred precinct", "Precinct", 19.4346, -99.1313,
+         "moderate", "Templo Mayor excavations; Calnek; the 1524 map",
+         [{"from": T0, "to": _fall,
+           "text": "The walled ceremonial heart: the twin-shrined great temple, the "
+                   "calmecac schools, the skull rack, the ballcourt — some seventy-eight "
+                   "structures by the fullest count, serving as the empire's ritual "
+                   "centre. Tóxcatl's massacre happens in this courtyard."},
+          {"from": _fall, "to": T1,
+           "text": "Razed after the fall; its stones go into the colonial city and the "
+                   "first cathedral rises at its southern edge. The Templo Mayor's "
+                   "platforms sleep under the plaza until 1978."}]),
+        ("city-palace-axayacatl", "The palace of Axayácatl", "Palace", 19.4347, -99.1340,
+         "moderate", "Calnek; [C2][BD] — the company's quarters",
+         [{"from": T0, "to": _fall,
+           "text": "The old ruler's palace west of the precinct: the Spaniards' "
+                   "quarters from November 1519, Moctezuma's prison, the treasure "
+                   "chamber's site, and the fortress of the palace siege of June 1520."},
+          {"from": _fall, "to": T1,
+           "text": "Ruined in the war; the block passes into the colonial city's fabric."}]),
+        ("city-palace-moctezuma", "The new palaces of Moctezuma", "Palace", 19.4327, -99.1286,
+         "moderate", "Calnek; the sources' 'casas nuevas'",
+         [{"from": T0, "to": _fall,
+           "text": "Moctezuma's own compound southeast of the precinct — audience "
+                   "halls, aviaries, gardens the soldiers struggled to describe."},
+          {"from": _fall, "to": T1,
+           "text": "Its site becomes the seat of New Spain's government — the "
+                   "viceregal palace stands on the tlatoani's ground."}]),
+        ("city-tlatelolco-market", "The great market of Tlatelōlco", "Market", 19.4505, -99.1353,
+         "moderate", "[C2][BD] descriptions; Calnek",
+         [{"from": T0, "to": _fall,
+           "text": "The tianquiztli that stunned the Spaniards: tens of thousands "
+                   "trading daily under the market court's supervision — the economic "
+                   "engine of the lake world, and the war's final pocket."},
+          {"from": _fall, "to": T1,
+           "text": "The market quarter is the last ground to fall; trade returns "
+                   "under the colony but the great court does not."}]),
+        ("city-campan", "The four campan", "City quarters", 19.4300, -99.1310,
+         "moderate", "Calnek; the axes fossilised in the colonial grid",
+         [{"from": T0, "to": T1,
+           "text": "The causeway axes quartered the island: Cuepopan (NW), Atzacoalco "
+                   "(NE), Moyotlan (SW), Teopan (SE), with Tlatelōlco to the north — "
+                   "each with its own temples, schools and barrio structure. The "
+                   "colonial parcialidades reused the same divisions, which is how the "
+                   "modern streets still remember them."}]),
+        ("city-chinampas", "The island's chinampa skirts", "Chinampas", 19.4220, -99.1300,
+         "moderate", "Calnek (1972)",
+         [{"from": T0, "to": _fall,
+           "text": "Raised-field ribbons fringing the island's south and west: the "
+                   "city's kitchen gardens, threaded by canals, worked from canoes."},
+          {"from": _fall, "to": T1,
+           "text": "War-torn and then slowly rebuilt; the chinampa economy persists "
+                   "at Xochimilco far longer than at the capital's own edge."}]),
+        ("city-traza", "The traza", "Colonial city", 19.4340, -99.1310,
+         "good", "the 1522+ grid; [GIB]",
+         [{"from": T0, "to": _col,
+           "text": "Not yet: until the fall this ground is the Mexica centre itself."},
+          {"from": _col, "to": T1,
+           "text": "The Spanish city's chequerboard, laid on the Mexica axes with "
+                   "native labour and temple stone: thirteen blocks a side for the "
+                   "conquerors, the surviving Mexica moved to the parcialidades at "
+                   "the edges. The plaza mayor sits beside the razed precinct."}]),
+        ("city-san-francisco", "San Francisco", "Church", 19.4339, -99.1391,
+         "moderate", "founded 1524; [GIB]",
+         [{"from": T0, "to": t_of_julian(1524, 6, 1),
+           "text": "Not yet: the site holds Moctezuma's aviary until the war."},
+          {"from": t_of_julian(1524, 6, 1), "to": T1,
+           "text": "The Franciscans' mother church, founded 1524 on the aviary's "
+                   "site — the spiritual conquest's headquarters, school and stage."}]),
+    ]
+    for cid, name, kind, lat, lon, conf, src, eras in CITY_CARDS:
+        ents.append({
+            "id": cid, "name": name, "kind": kind, "layer": "city",
+            "lon": lon, "lat": lat, "from": T0, "to": None,
+            "confidence": conf, "note": "drawn at visualization grade from the city "
+                                        "model — see the About panel",
+            "facts": [["Kind", kind], ["Source", src]],
+            "eras": eras, "sources": [src, "Calnek (1972, 1976); González Aparicio (1973)"],
+        })
+
     # people — cards, not map dots (they move); the People panel lists whoever
     # is active at t, and the eras tile to T1 so a card read in 1540 says what
     # became of them
@@ -342,11 +426,13 @@ def build_entities():
 def build_events_js():
     evs = []
     for e in events_mod.EVENTS:
-        if e["place"]:
+        # a placement override (round 4) wins over the place slug's centroid —
+        # the slug keeps the semantic link, the placement carries the position
+        if e["latlon"]:
+            lat, lon = e["latlon"]
+        else:
             g = gazetteer.BY_SLUG[e["place"]]
             lon, lat = g["lon"], g["lat"]
-        else:
-            lat, lon = e["latlon"]
         y, m, d = e["julian"]
         jdn = e["jdn"]
         gy, gm, gd = gregorian_of_jdn(jdn)
@@ -435,6 +521,33 @@ ENTITY_IMAGE = {"cholula-massacre": "lienzo-cholula", "tlaxcala-alliance": "lien
 # In-app update log — written for a reader, not a changelog: the effect first,
 # the number as evidence. Rendered in the About panel.
 UPDATES = [
+    {"version": "2.1", "date": "27 July 2026",
+     "title": "The city itself, and the war in motion",
+     "summary": "Tenochtitlan stops being an outline: precincts, palaces, the canal "
+                "fabric, the chinampa skirts and the four campan, phased across the "
+                "timeline — intact, besieged and burning, ruined, then colonial. The "
+                "terrain sharpens to its data's native grain, and events stop being "
+                "identical diamonds: the column marches, battles pulse, the epidemic "
+                "front expands, the arteries redden as they are cut.",
+     "items": [
+         "The city model (drawn from Calnek, the excavations and the street fossils "
+         "of the modern Centro): sacred precincts, the palaces of Axayácatl and "
+         "Moctezuma, the great market, schematic canals — dashed because schematic — "
+         "chinampa fringes, then the colonial traza and its churches after 1522. Every "
+         "element is a card; the same place reads differently in 1519 and 1540.",
+         "City events sit where they happened: the meeting at Xoloc on the causeway, "
+         "the seizure in Axayácatl's palace, Tóxcatl in the precinct courtyard, the "
+         "last stand in Tlatelolco's market — and labels stack instead of "
+         "overprinting, so the plague year's crowded weeks read cleanly.",
+         "The war moves: the column is drawn in transit between its dated waypoints; "
+         "battles and massacres pulse rings for days after their date; the arteries "
+         "turn crimson as each is cut; brigantines hold the lake; smoke stands over "
+         "the razing; the epidemic's modelled front expands from the coast.",
+         "Terrain at native grain (z9/z12) with curvature-shaded ravines and rock on "
+         "steep ground — and a rendering lesson kept honest: the first city render "
+         "amplified upsampling noise into a checkerboard, was caught visually, and "
+         "the curvature now fades below the data's 30 m grain.",
+     ]},
     {"version": "2.0", "date": "27 July 2026",
      "title": "A living landscape, a continuous camera, and the record illustrated",
      "summary": "The map becomes terrain: real elevation and ocean depth (NASA SRTM and "
@@ -593,6 +706,13 @@ def emit():
             "city":  {"lon0": -99.235, "lat0": 19.325, "lon1": -99.030, "lat1": 19.515,
                       "label": "Tenochtitlan"},
         },
+        # basemap extents — A MATCHED PAIR with build/terrain.py VIEWS (the city
+        # image is wider than the city camera preset on purpose)
+        "terrain": {
+            "meso":  {"lon0": -105.0, "lat0": 13.5, "lon1": -86.5, "lat1": 22.5},
+            "basin": {"lon0": -99.55, "lat0": 19.02, "lon1": -98.55, "lat1": 19.95},
+            "city":  {"lon0": -99.32, "lat0": 19.27, "lon1": -98.94, "lat1": 19.57},
+        },
         "layers": [
             {"id": "water", "label": "Lakes & works (1519 reconstruction)", "on": True},
             {"id": "altepetl", "label": "Altepetl & allegiance", "on": True},
@@ -601,12 +721,20 @@ def emit():
             {"id": "track", "label": "Campaign track", "on": True},
             {"id": "events", "label": "Events", "on": True},
             {"id": "works", "label": "Causeways & aqueduct cards", "on": True},
+            {"id": "city", "label": "City model (phased)", "on": True},
         ],
         "siege": {"start": siege.SIEGE_START, "end": siege.SIEGE_END,
-                  "arteries": [{"label": a["label"], "cut": round(a["cut"], 4),
+                  "arteries": [{"id": a["id"], "label": a["label"],
+                                "cut": round(a["cut"], 4),
                                 "confidence": a["confidence"]} for a in siege.ARTERIES]},
         "epidemicBand": [int(epidemic.MORTALITY_BAND[0] * 100),
                          int(epidemic.MORTALITY_BAND[1] * 100)],
+        "epidemicFront": {"lat": gazetteer.BY_SLUG["cempoala"]["lat"],
+                          "lon": gazetteer.BY_SLUG["cempoala"]["lon"],
+                          "t0": round(epidemic.SEED_T, 4),
+                          "kmPerYear": round(epidemic._SPEED_KM_PER_YR, 1)},
+        "cityPhases": {"siege": siege.SIEGE_START, "fall": siege.SIEGE_END,
+                       "colonial": _t(1522, 1, 15)},
         "stateColor": STATE_COLOR,
         "stateLabel": {
             "alliance-core": "Triple Alliance seat", "tributary": "Tributary",
@@ -641,6 +769,11 @@ def emit():
     files.append(write("entities.js", header + "DATA.entities = " + j(ents) + ";\n"))
     files.append(write("eventsFull.js", header + "DATA.eventsFull = " + j(evs) + ";\n"))
     files.append(write("geo.js", header + "DATA.geo = " + j({
+        "city": [{"id": k, "kind": g["kind"], "closed": g["closed"],
+                  "confidence": g["confidence"], "phases": list(g["phases"]),
+                  "points": g["points"]} for k, g in georef.CITY.items()],
+        "campanLabels": [{"name": n, "lat": la, "lon": lo}
+                         for n, la, lo in georef.CAMPAN_LABELS],
         "features": [{"id": k, "kind": g["kind"], "closed": g["closed"],
                       "confidence": g["confidence"], "points": g["points"]}
                      for k, g in georef.GEOMETRY.items()]

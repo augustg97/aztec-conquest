@@ -281,6 +281,173 @@ def dist_to_polygon_km(lat, lon, points):
 
 
 # ---------------------------------------------------------------------------
+# THE CITY MODEL (round 4) — Tenochtitlan-Tlatelolco as a phased simulation
+# ---------------------------------------------------------------------------
+# Sources: Calnek (1972, 1976) on settlement pattern and the canal-chinampa
+# fabric; the 1524 map's topology (NOT its geometry — measured residual 2.2 km);
+# González Aparicio (1973); and the street fossils of the modern Centro (the
+# Tacuba axis, the Iztapalapan road under Pino Suárez, the precinct under the
+# Zócalo — the colonial traza reused the Mexica axes, which is exactly why the
+# modern streets can anchor the reconstruction). Everything below is AUTHORED
+# at visualization grade with a confidence field; the canal grid is explicitly
+# SCHEMATIC ("canals ran on these alignments"); nothing claims survey truth.
+#
+# PHASES (cityPhaseAt in the app; boundaries from the event record):
+#   mexica    T0 .. 22 May 1521 (siege opens)
+#   siege     .. 13 Aug 1521    (razing overlay + smoke)
+#   ruin      .. c. Jan 1522    (charred, silent)
+#   colonial  from c. Jan 1522  (the traza grid + churches; the precinct razed;
+#                                the great canals persist as acequias)
+
+CITY = {
+    "sacred-precinct": {
+        "kind": "precinct", "phases": ("mexica", "siege", "ruin"),
+        "confidence": "moderate",
+        "source": "Templo Mayor excavations; Calnek; the 1524 map's central square",
+        "closed": True,
+        "points": [(-99.1330, 19.4330), (-99.1296, 19.4330),
+                   (-99.1296, 19.4362), (-99.1330, 19.4362)],
+    },
+    "palace-axayacatl": {
+        "kind": "palace", "phases": ("mexica", "siege", "ruin"),
+        "confidence": "moderate",
+        "source": "west of the precinct (later Monte de Piedad block) — Calnek; the sources' 'palace of Axayácatl'",
+        "closed": True,
+        "points": [(-99.1348, 19.4338), (-99.1332, 19.4338),
+                   (-99.1332, 19.4356), (-99.1348, 19.4356)],
+    },
+    "palace-moctezuma": {
+        "kind": "palace", "phases": ("mexica", "siege", "ruin"),
+        "confidence": "moderate",
+        "source": "southeast of the precinct (under the later Palacio Nacional) — Calnek",
+        "closed": True,
+        "points": [(-99.1296, 19.4318), (-99.1276, 19.4318),
+                   (-99.1276, 19.4336), (-99.1296, 19.4336)],
+    },
+    "tlatelolco-precinct": {
+        "kind": "precinct", "phases": ("mexica", "siege", "ruin"),
+        "confidence": "moderate",
+        "source": "Tlatelolco excavations (Plaza de las Tres Culturas)",
+        "closed": True,
+        "points": [(-99.1382, 19.4498), (-99.1362, 19.4498),
+                   (-99.1362, 19.4516), (-99.1382, 19.4516)],
+    },
+    "tlatelolco-market": {
+        "kind": "plaza", "phases": ("mexica", "siege", "ruin"),
+        "confidence": "moderate",
+        "source": "the great tianquiztli east of the precinct — Cortés's and Díaz's descriptions; Calnek",
+        "closed": True,
+        "points": [(-99.1362, 19.4498), (-99.1344, 19.4498),
+                   (-99.1344, 19.4512), (-99.1362, 19.4512)],
+    },
+    # the two great axes that quartered the city into the four campan
+    "axis-north-south": {
+        "kind": "axis", "phases": ("mexica", "siege", "ruin", "colonial"),
+        "confidence": "good",
+        "source": "the Tepeyacac-Iztapalapan road; fossilised by the colonial street grid",
+        "closed": False,
+        "points": [(-99.1313, 19.4600), (-99.1313, 19.4210)],
+    },
+    "axis-east-west": {
+        "kind": "axis", "phases": ("mexica", "siege", "ruin", "colonial"),
+        "confidence": "good",
+        "source": "the Tlacopan road (modern Calle Tacuba) to the eastern landing",
+        "closed": False,
+        "points": [(-99.1480, 19.4346), (-99.1120, 19.4346)],
+    },
+    # the canal fabric — SCHEMATIC: representative alignments of a dense grid
+    "canal-acequia-real": {
+        "kind": "canal", "phases": ("mexica", "siege", "ruin", "colonial"),
+        "confidence": "moderate",
+        "source": "the Acequia Real south of the precinct, still open in colonial plans",
+        "closed": False,
+        "points": [(-99.1460, 19.4310), (-99.1130, 19.4310)],
+    },
+    "canal-2": {"kind": "canal", "phases": ("mexica", "siege", "ruin"),
+                "confidence": "contested", "source": "schematic — Calnek's canal fabric",
+                "closed": False,
+                "points": [(-99.1450, 19.4270), (-99.1140, 19.4270)]},
+    "canal-3": {"kind": "canal", "phases": ("mexica", "siege", "ruin"),
+                "confidence": "contested", "source": "schematic — Calnek's canal fabric",
+                "closed": False,
+                "points": [(-99.1440, 19.4235), (-99.1160, 19.4235)]},
+    "canal-4": {"kind": "canal", "phases": ("mexica", "siege", "ruin"),
+                "confidence": "contested", "source": "schematic — Calnek's canal fabric",
+                "closed": False,
+                "points": [(-99.1470, 19.4385), (-99.1130, 19.4385)]},
+    "canal-5": {"kind": "canal", "phases": ("mexica", "siege", "ruin"),
+                "confidence": "contested", "source": "schematic — Calnek's canal fabric",
+                "closed": False,
+                "points": [(-99.1455, 19.4425), (-99.1150, 19.4425)]},
+    "canal-ns-1": {"kind": "canal", "phases": ("mexica", "siege", "ruin"),
+                   "confidence": "contested", "source": "schematic — Calnek's canal fabric",
+                   "closed": False,
+                   "points": [(-99.1362, 19.4215), (-99.1362, 19.4460)]},
+    "canal-ns-2": {"kind": "canal", "phases": ("mexica", "siege", "ruin"),
+                   "confidence": "contested", "source": "schematic — Calnek's canal fabric",
+                   "closed": False,
+                   "points": [(-99.1265, 19.4220), (-99.1265, 19.4455)]},
+    # chinampa fringes: the productive raised-field skirts of the island
+    "chinampas-south": {
+        "kind": "chinampa", "phases": ("mexica", "siege", "ruin"),
+        "confidence": "moderate", "source": "Calnek (1972): the chinampa periphery",
+        "closed": True,
+        "points": [(-99.1450, 19.4200), (-99.1160, 19.4200),
+                   (-99.1150, 19.4240), (-99.1460, 19.4245)],
+    },
+    "chinampas-west": {
+        "kind": "chinampa", "phases": ("mexica", "siege", "ruin"),
+        "confidence": "moderate", "source": "Calnek (1972): the chinampa periphery",
+        "closed": True,
+        "points": [(-99.1500, 19.4250), (-99.1455, 19.4250),
+                   (-99.1450, 19.4420), (-99.1495, 19.4415)],
+    },
+    "chinampas-north": {
+        "kind": "chinampa", "phases": ("mexica", "siege", "ruin"),
+        "confidence": "moderate", "source": "the Tlatelolca chinampa skirt",
+        "closed": True,
+        "points": [(-99.1420, 19.4530), (-99.1330, 19.4545),
+                   (-99.1340, 19.4580), (-99.1425, 19.4560)],
+    },
+    # the colonial city
+    "traza": {
+        "kind": "traza", "phases": ("colonial",),
+        "confidence": "good",
+        "source": "the 1522+ traza for the Spanish city, on the Mexica centre's own grid",
+        "closed": True,
+        "points": [(-99.1362, 19.4288), (-99.1258, 19.4288),
+                   (-99.1258, 19.4392), (-99.1362, 19.4392)],
+    },
+    "church-san-francisco": {
+        "kind": "church", "phases": ("colonial",),
+        "confidence": "moderate",
+        "source": "San Francisco, founded 1524 on the aviary's site (modern Madero)",
+        "closed": False,
+        "points": [(-99.1391, 19.4339)],
+    },
+    "church-first-cathedral": {
+        "kind": "church", "phases": ("colonial",),
+        "confidence": "moderate",
+        "source": "the first cathedral at the precinct's razed south edge, begun 1520s",
+        "closed": False,
+        "points": [(-99.1332, 19.4344)],
+    },
+    "colegio-tlatelolco-site": {
+        "kind": "church", "phases": ("colonial",),
+        "confidence": "good",
+        "source": "Santa Cruz de Tlatelolco (1536) beside the old precinct",
+        "closed": False,
+        "points": [(-99.1378, 19.4510)],
+    },
+}
+
+CAMPAN_LABELS = [
+    ("Cuepopan", 19.4425, -99.1395), ("Atzacoalco", 19.4425, -99.1240),
+    ("Moyotlan", 19.4270, -99.1395), ("Teopan", 19.4270, -99.1240),
+    ("Tlatelōlco", 19.4535, -99.1400),
+]
+
+# ---------------------------------------------------------------------------
 # A2-b (round 3): the 1524 Nuremberg map, georeferenced and MEASURED
 # ---------------------------------------------------------------------------
 # Control points picked by inspection of the Newberry scan (public domain;
@@ -388,6 +555,27 @@ def _selftest():
     # the Paso de Cortés lies between the two volcanoes
     po, iz = PEAKS["popocatepetl"], PEAKS["iztaccihuatl"]
     assert abs((po[0] + iz[0]) / 2 - 19.101) < 0.02
+    # the city model: phases valid, geometry inside the island's neighbourhood,
+    # and the precinct centred on the Templo Mayor anchor
+    fp = GEOMETRY["city-footprint"]["points"]
+    for name, g in CITY.items():
+        assert set(g["phases"]) <= {"mexica", "siege", "ruin", "colonial"}, name
+        assert g["confidence"] in CONFIDENCE and g["source"], name
+        for lon, lat in g["points"]:
+            assert 19.40 <= lat <= 19.47 or "tlatelolco" in name or "chinampa" in name \
+                or "axis" in name or "colegio" in name, f"{name}: {lat}"
+            assert -99.155 <= lon <= -99.108, f"{name}: {lon}"
+    pre = CITY["sacred-precinct"]["points"]
+    clat = sum(p[1] for p in pre) / 4; clon = sum(p[0] for p in pre) / 4
+    d_tm = dist_km(clat, clon, ANCHORS["templo-mayor"][0], ANCHORS["templo-mayor"][1])
+    assert d_tm < 0.35, f"precinct centre {d_tm*1000:.0f} m from the Templo Mayor anchor"
+    mk = CITY["tlatelolco-market"]["points"]
+    mlat = sum(p[1] for p in mk) / 4; mlon = sum(p[0] for p in mk) / 4
+    assert dist_km(mlat, mlon, ANCHORS["tlatelolco-templo"][0],
+                   ANCHORS["tlatelolco-templo"][1]) < 0.35
+    # the traza sits inside the island footprint
+    for lon, lat in CITY["traza"]["points"]:
+        assert point_in_polygon(lat, lon, fp), "traza corner off the island"
     # no altepetl may drown in an ocean (gazetteer cross-check runs in the audit,
     # but the canonical land anchors must be on land here too)
     for (lat, lon) in ((19.4348, -99.1318), (19.318, -98.238)):   # Tenochtitlan, Tlaxcala

@@ -47,10 +47,16 @@ OUT = os.path.join(ROOT, "web", "img")
 URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
 
 # view -> (lon0, lat0, lon1, lat1, zoom, out_width)
+# TERRAIN EXTENTS — a matched pair with DATA.meta.terrain in emit.py (the app
+# positions each image by these exact extents). The CITY image is wider than
+# the city camera preset on purpose, so panning near the island stays sharp.
+# z12 is SRTM's native grain (~30 m) at this latitude; the round-4 curvature
+# and slope shading synthesise legible sub-grid texture from the measured
+# surface itself (ARCHITECTURE-PATTERNS §7), never from noise.
 VIEWS = {
-    "meso":  (-105.0, 13.5, -86.5, 22.5, 8, 2048),
-    "basin": (-99.55, 19.02, -98.55, 19.95, 11, 1600),
-    "city":  (-99.235, 19.325, -99.03, 19.515, 12, 1200),
+    "meso":  (-105.0, 13.5, -86.5, 22.5, 9, 3072),
+    "basin": (-99.55, 19.02, -98.55, 19.95, 12, 2600),
+    "city":  (-99.32, 19.27, -98.94, 19.57, 12, 2400),
 }
 
 SEASONS = ("dry", "wet")
@@ -168,12 +174,31 @@ def render(view):
     hs = (math.sin(alt) * np.cos(slope)
           + math.cos(alt) * np.sin(slope) * np.cos(az - aspect))
     hs = np.clip(hs, 0, 1)
+    # round 4 — sub-grid legibility from the measured surface itself:
+    #   curvature (Laplacian): darken ravine floors, lift ridge crests;
+    #   steep ground (> ~28 deg) shifts toward bare rock.
+    # The Laplacian must be taken on a lightly smoothed surface, and its gain
+    # must FADE OUT once the output grid is finer than SRTM's ~30 m native
+    # grain — otherwise bilinear upsampling's second derivative renders as a
+    # checkerboard that reads as structure (TRAPS B1, caught visually in the
+    # first city render).
+    Es = E.copy()
+    for _ in range(2):
+        Es = (Es + np.roll(Es, 1, 0) + np.roll(Es, -1, 0)
+              + np.roll(Es, 1, 1) + np.roll(Es, -1, 1)) / 5.0
+    lap = (np.roll(Es, 1, 0) + np.roll(Es, -1, 0) + np.roll(Es, 1, 1)
+           + np.roll(Es, -1, 1) - 4 * Es) / max(mpp, 1.0)
+    native_gain = min(1.0, max(0.0, (mpp - 18.0) / 25.0))
+    curv = np.clip(lap * 6.0 * native_gain, -0.22, 0.22)
+    hs2 = np.clip(hs + curv, 0, 1.15)
+    rock = np.clip((slope - math.radians(28)) / math.radians(18), 0, 1)[..., None]
     land = E >= 0
     outs = {}
     for season in SEASONS:
         col = _lut(LAND[season], np.clip(E, 0, 5700))
+        col = col * (1 - rock * 0.45) + np.array([124, 118, 108], np.float32) * rock * 0.45
         oce = _lut(OCEAN, np.clip(E, -6500, 0))
-        shade_l = (0.45 + 0.75 * hs)[..., None]
+        shade_l = (0.40 + 0.72 * hs2)[..., None]
         shade_o = (0.82 + 0.25 * hs)[..., None]
         img = np.where(land[..., None], col * shade_l, oce * shade_o)
         # shoreline glint: thin bright line where |E| is tiny

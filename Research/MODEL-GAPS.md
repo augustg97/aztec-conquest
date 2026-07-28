@@ -123,6 +123,15 @@ re-litigate):
 | Images | **DELIVERED** — 10 public-domain card images fetched, subject-verified (1 blank-flyleaf rejected — TRAPS A4 fired again), credited on every card, audit-enforced; **5 recorded negatives** (toxcatl, siege-painting, malintzin*, cuauhtemoc, fc-siege) — *Malintzin card uses the Lienzo meeting scene where she is the central figure |
 | Chapters | **DELIVERED** — chapter cards with image, span, story and clickable event list; 9 of 10 illustrated (ring-closes open) |
 
+**Round 4 (user design feedback):**
+
+| # | outcome |
+|---|---|
+| Terrain detail | **APPLIED** — z9/z12 native-grain renders (Popo 5,399 m vs 5,393 real), curvature + rock shading; the first city render's upsampling-checkerboard was caught VISUALLY and fixed structurally (gain fades below the 30 m native grain) — TRAPS B1's lesson, honoured |
+| City model (new: A2-e) | **APPLIED** — phased Tenochtitlan (precincts, palaces, market, schematic canals dashed-as-schematic, chinampas, campan; traza + churches from 1522); 8 phase-aware cards; georef selftest pins the precinct ≤ 350 m from the Templo Mayor anchor |
+| Event placement + readability | **APPLIED** — 34 researched intra-city placements (Xoloc, the palace, the precinct, the market...); global label-collision stacker with leader lines; the plague-year cluster now reads |
+| Event simulacra | **APPLIED** — interpolated marching column; kind glyphs; deterministic battle/massacre pulse rings; siege arteries redden as cut + brigantines + razing char & smoke; epidemic wavefront ring; t-keyed flowing tribute/track dashes — all pure functions of t, scrub-reproducible |
+
 **Count: 5 open items — 0 at P1.**
 
 1. **A2-b-rest** consult González Aparicio (1973) in facsimile and trace properly (no

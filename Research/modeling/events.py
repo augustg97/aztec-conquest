@@ -905,6 +905,57 @@ EVENTS = [
       "good", ["[GIB]", "[GER]"]),
 ]
 
+# ---------------------------------------------------------------------------
+# Round 4 — intra-city placements. A `place` slug keeps carrying the SEMANTIC
+# link (allegiance, cards); the placement puts the marker where the event
+# happened within the island, from the sources and the city model:
+# the meeting at Xoloc on the causeway [C2][BD]; the company quartered in the
+# palace of Axayácatl (west of the precinct) [C2][BD]; Tóxcatl in the sacred
+# precinct's courtyard [FC]; the ambush at a causeway gap toward Tlatelolco
+# [C3][BD]; the last stand in Tlatelolco's market quarter [FC][AT]; the
+# colonial events on their documented sites (San Francisco 1524; the Colegio
+# 1536; Tepeyac for the Guadalupe tradition). Confidence follows the source's
+# own precision — a placement is never finer than its evidence.
+PLACEMENTS = {
+    "entry-tenochtitlan": (19.4060, -99.1350),    # Xoloc, the causeway fork
+    "moctezuma-seized": (19.4346, -99.1341),      # palace of Axayácatl
+    "quauhpopoca-burned": (19.4338, -99.1322),    # before the palace, precinct edge
+    "gold-melted": (19.4352, -99.1338),           # the palace treasury
+    "toxcatl": (19.4344, -99.1310),               # the precinct courtyard
+    "cempoala-narvaez": (19.4460, -96.4040),      # Cempoala (unchanged, explicit)
+    "cortes-returns": (19.4360, -99.1336),        # the palace, reoccupied
+    "moctezuma-dies": (19.4350, -99.1345),        # the palace roof, west side
+    "noche-triste": (19.4390, -99.1470),          # the Tlacopan causeway gaps
+    "smallpox-basin": (19.4290, -99.1265),        # Teopan quarter
+    "cuitlahuac-tlatoani": (19.4336, -99.1316),   # the precinct
+    "cuitlahuac-dies": (19.4326, -99.1332),       # the royal compounds
+    "siege-camps": (19.4180, -99.1340),           # the southern approaches
+    "brigantine-victory": (19.4300, -99.1050),    # open water east of the island
+    "sandoval-tepeyac": (19.4680, -99.1200),      # the northern causeway
+    "tlatelolco-ambush": (19.4489, -99.1392),     # the causeway gap at Tlatelolco
+    "water-famine": (19.4520, -99.1355),          # the Tlatelolco quarter
+    "razing-advance": (19.4310, -99.1330),        # the advancing rubble line
+    "surrender-refused": (19.4532, -99.1390),     # the shrinking northern pocket
+    "tlatelolco-market-fall": (19.4505, -99.1352),  # the great market
+    "fall-tenochtitlan": (19.4470, -99.1240),     # taken on the water, east
+    "cuauhtemoc-tortured": (19.3467, -99.1617),   # Coyoacán HQ (unchanged, explicit)
+    "rebuilding-begins": (19.4335, -99.1325),     # the traza
+    "cortes-governor": (19.4330, -99.1290),       # the new palace block
+    "franciscan-twelve": (19.4339, -99.1391),     # San Francisco's site
+    "guadalupe-tradition": (19.4847, -99.1172),   # Tepeyacac itself
+    "printing-press": (19.4332, -99.1345),        # the Cromberger house, traza
+    "codex-mendoza-made": (19.4346, -99.1330),    # the scriptoria by the plaza
+    "colegio-tlatelolco": (19.4510, -99.1378),    # Santa Cruz de Tlatelolco
+    "sahagun-begins": (19.4506, -99.1364),        # the Colegio's scriptorium
+    "cocoliztli-1545": (19.4300, -99.1360),       # the parcialidades
+    "congregacion-1550": (19.4380, -99.1260),     # the shrinking eastern shore
+    "mendoza-viceroy": (19.4336, -99.1286),       # the viceregal palace block
+}
+
+for _e in EVENTS:
+    if _e["id"] in PLACEMENTS:
+        _e["latlon"] = PLACEMENTS[_e["id"]]
+
 BY_ID = {e["id"]: e for e in EVENTS}
 
 
