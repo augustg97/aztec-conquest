@@ -25,11 +25,20 @@ const T0 = D.meta.t0, T1 = D.meta.t1;
 const [CAMP0, CAMP1] = D.meta.campaign;
 const SPEEDS = D.meta.speeds;
 
+// The camera is continuous (round 3): centre + lon-span, animated between the
+// named presets, wheel-zoomable about the cursor, drag-pannable. `view` tracks
+// the nearest preset purely for the buttons and the hash.
+function camOf(v) {
+  return {cx: (v.lon0 + v.lon1) / 2, cy: (v.lat0 + v.lat1) / 2,
+          span: v.lon1 - v.lon0};
+}
+
 const state = {
   t: 1519.0,                         // open on the eve of the war
   playing: false,
   speed: 2,
   view: 'meso',
+  cam: null,                          // set at boot from the view preset
   layers: {},
   selection: null,
 };
@@ -65,6 +74,17 @@ function fmtT(t) {
 /* Keyboard/button step: one day inside the campaign, one month outside. */
 function stepOf(t) { return inCampaign(t) ? 1 / 365.25 : 1 / 12; }
 
+/* Season of the central-Mexican year: wet roughly May-October. Drives the
+ * basemap crossfade, the cloud density and the lake pulse — a modelled
+ * rendering of the climate's annual breath, and labelled as such in About. */
+function wetness(t) {
+  const [, m, d] = julianOfT(t);
+  if (m >= 6 && m <= 9) return 1;
+  if (m === 5) return d / 31;
+  if (m === 10) return 1 - d / 31;
+  return 0;
+}
+
 // ----------------------------------------------- non-linear time scale --
 /* The scrubber is PIECEWISE (SCOPE §2): the campaign carries 56% of the track.
  * xOf and tOf are exact inverses; the breakpoints are drawn on the track and
@@ -92,25 +112,30 @@ function tOf(x) {
 }
 
 // ------------------------------------------------------------- projection --
-/* Fixed equirectangular fit of the current view extent, with the lon scale
- * corrected by cos(mid-lat) so Basin shapes are not stretched. Three nested
- * scales (SCOPE §2): Mesoamerica / Basin / Tenochtitlan. */
+/* Plate carrée about the camera, with the lon scale corrected by cos(mid-lat)
+ * so Basin shapes are not stretched. The terrain basemaps in web/img/ are
+ * rendered by build/terrain.py in EXACTLY this mapping over the preset
+ * extents — the projection and the basemaps are a matched pair; change one,
+ * change both. */
 let PROJ = null;
 
 function computeProj() {
-  const v = D.meta.views[state.view];
+  const c = state.cam;
   const r = svg.getBoundingClientRect();
-  const W = r.width, H = r.height - 130;           // leave room for the timeline
-  const kx = Math.cos((v.lat0 + v.lat1) / 2 * Math.PI / 180);
-  const dLon = (v.lon1 - v.lon0) * kx, dLat = v.lat1 - v.lat0;
-  const s = Math.min(W / dLon, H / dLat) * 0.94;
-  PROJ = {v, kx, s,
-          x0: (W - dLon * s) / 2 - v.lon0 * kx * s,
-          y0: (H - dLat * s) / 2 + v.lat1 * s + 20};
+  const W = r.width, H = r.height;
+  const kx = Math.cos(c.cy * Math.PI / 180);
+  const s = (W * 0.94) / (c.span * kx);            // px per degree (x, km-true)
+  PROJ = {kx, s, W, H,
+          x0: W / 2 - c.cx * kx * s,
+          y0: H / 2 - 55 + c.cy * s};              // slight upward bias for the timeline
 }
 
 function project(lon, lat) {
   return [PROJ.x0 + lon * PROJ.kx * PROJ.s, PROJ.y0 - lat * PROJ.s];
+}
+
+function unproject(x, y) {
+  return [(x - PROJ.x0) / (PROJ.kx * PROJ.s), (PROJ.y0 - y) / PROJ.s];
 }
 
 function onScreen(x, y, m = 40) {
@@ -176,44 +201,86 @@ function render() {
   if (state.selection) openCard(state.selection);
 }
 
-// The ground (round 2 — a first-release reader rightly reported "just a black
-// background"): land tint, the two seas, the sierra as soft ridgelines, the
-// named peaks. Authored cartography at visualization grade; the About panel
-// says so, and audit_witness scores the coastal relationships.
+// The ground (rounds 2-3): under everything, the vector land/sea fallback;
+// over it, the REAL terrain — SRTM land + ETOPO shelf rendered by
+// build/terrain.py per view and season, crossfaded by zoom and by the wet/dry
+// year. The 1519 lakes are drawn over the modern terrain deliberately:
+// reconstruction over measurement, each labelled as what it is.
+const TERRAIN = [
+  {id: 'meso'},
+  {id: 'basin'},
+  {id: 'city'},
+];
+
+function terrainAlpha(id) {
+  const span = state.cam.span;
+  if (id === 'meso') return 1;
+  if (id === 'basin') return Math.max(0, Math.min(1, (3.2 - span) / 0.9));
+  return Math.max(0, Math.min(1, (0.55 - span) / 0.18));
+}
+
 function drawSubstrate() {
-  const r = svg.getBoundingClientRect();
   const g = el('g', {'data-layer': 'substrate'});
-  g.appendChild(el('rect', {x: 0, y: 0, width: r.width, height: r.height,
+  g.appendChild(el('rect', {x: 0, y: 0, width: PROJ.W, height: PROJ.H,
                             fill: '#161c17'}));
   for (const f of D.geo.features) {
     if (f.kind !== 'sea') continue;
     g.appendChild(el('path', {d: pathOf(f.points, true),
-      fill: '#0a1422', stroke: 'rgba(120,160,200,.28)', 'stroke-width': 1}));
+      fill: '#0a1422', stroke: 'none'}));
   }
-  if (state.view === 'meso') {
+  const wet = wetness(state.t);
+  for (const tr of TERRAIN) {
+    const a = terrainAlpha(tr.id);
+    if (a <= 0) continue;
+    const v = D.meta.views[tr.id];
+    const [x0, y0] = project(v.lon0, v.lat1);
+    const [x1, y1] = project(v.lon1, v.lat0);
+    if (x1 < -40 || y1 < -40 || x0 > PROJ.W + 40 || y0 > PROJ.H + 40) continue;
+    const attrs = {x: x0, y: y0, width: x1 - x0, height: y1 - y0,
+                   preserveAspectRatio: 'none'};
+    const dry = el('image', Object.assign({href: `img/terrain-${tr.id}-dry.jpg`,
+                                           opacity: a}, attrs));
+    g.appendChild(dry);
+    if (wet > 0.02)
+      g.appendChild(el('image', Object.assign({href: `img/terrain-${tr.id}-wet.jpg`,
+                                               opacity: a * wet}, attrs)));
+  }
+  if (state.cam.span > 8) {
     for (const s of D.geo.seaLabels || [])
       g.appendChild(el('text', Object.assign({class: 'sealab'},
         xyAttrs(s.lon, s.lat)), s.label));
   }
-  for (const f of D.geo.features) {
-    if (f.kind !== 'ridge') continue;
-    if (state.view !== 'meso' && f.id.indexOf('basin') < 0) continue;
-    g.appendChild(el('path', {d: pathOf(f.points, false), fill: 'none',
-      stroke: 'rgba(150,135,110,.16)', 'stroke-width': 9, 'stroke-linecap': 'round'}));
-    g.appendChild(el('path', {d: pathOf(f.points, false), fill: 'none',
-      stroke: 'rgba(150,135,110,.30)', 'stroke-width': 1.6, 'stroke-linecap': 'round'}));
-  }
   for (const p of D.geo.peaks || []) {
-    if (p.views !== 'both' && p.views !== (state.view === 'meso' ? 'meso' : 'basin'))
-      continue;
+    const wantMeso = state.cam.span > 2.5;
+    if (p.views !== 'both' && p.views !== (wantMeso ? 'meso' : 'basin')) continue;
     const [x, y] = project(p.lon, p.lat);
     if (!onScreen(x, y)) continue;
     g.appendChild(el('path', {d: `M${x},${y - 5} L${x - 4.5},${y + 3} L${x + 4.5},${y + 3} Z`,
-      fill: 'rgba(200,190,170,.55)', stroke: 'rgba(0,0,0,.4)', 'stroke-width': 0.7}));
-    if (state.view !== 'meso' || p.views !== 'basin')
+      fill: 'rgba(230,225,215,.7)', stroke: 'rgba(0,0,0,.45)', 'stroke-width': 0.7}));
+    if (!wantMeso || p.views !== 'basin')
       g.appendChild(el('text', {x: x + 7, y: y + 3, class: 'peaklab'}, p.label));
   }
   svg.appendChild(g);
+  updateAtmosphere(wet);
+}
+
+// Atmosphere lives in persistent HTML (not the rebuilt SVG) so its CSS
+// animations survive every render: drifting cloud shadows scaled by the wet
+// season, and Popocatépetl's plume for its attested 1519-1528 active years
+// (see the 'Ordaz climbs the smoking mountain' event card).
+function updateAtmosphere(wet) {
+  const clouds = $('#clouds');
+  clouds.style.opacity = (0.35 + 0.65 * wet).toFixed(2);
+  clouds.classList.toggle('hidden', state.cam.span < 0.4);
+  const plume = $('#plume');
+  const active = state.t >= 1519.0 && state.t <= 1528.5 && state.cam.span < 6;
+  plume.classList.toggle('hidden', !active);
+  if (active) {
+    const [x, y] = project(-98.628, 19.023);
+    plume.style.left = (x - 9) + 'px';
+    plume.style.top = (y - 30) + 'px';
+    plume.style.transform = `scale(${Math.min(2.2, 1.6 / state.cam.span + 0.4)})`;
+  }
 }
 
 function xyAttrs(lon, lat) {
@@ -243,17 +310,22 @@ function drawEpidemic() {
 // geometry is a named reconstruction and its cards say so.
 function drawWater() {
   const g = el('g', {'data-layer': 'water'});
+  // the seasonal pulse: the closed basin's lakes breathe with the rains —
+  // a MODELLED annual cycle (SCOPE §3 'lake level'), calibrated to nothing
+  // finer than wet/dry, and labelled modelled on the works cards
+  const wet = wetness(state.t);
+  const fill = `rgba(96,150,196,${(0.30 + 0.14 * wet).toFixed(3)})`;
+  const strk = `rgba(130,180,220,${(0.50 + 0.20 * wet).toFixed(3)})`;
   for (const f of D.geo.features) {
     if (f.kind !== 'lake') continue;
     g.appendChild(el('path', {d: pathOf(f.points, true),
-      fill: 'rgba(90,140,190,.20)', stroke: 'rgba(120,170,215,.45)',
-      'stroke-width': 1}));
+      fill, stroke: strk, 'stroke-width': 1}));
   }
   // the island city footprint, on the water
   const fp = D.geo.features.find(f => f.id === 'city-footprint');
-  if (fp && state.view !== 'meso') {
+  if (fp && state.cam.span < 3.5) {
     g.appendChild(el('path', {d: pathOf(fp.points, true),
-      fill: 'rgba(200,180,140,.16)', stroke: 'rgba(200,180,140,.5)',
+      fill: 'rgba(200,180,140,.22)', stroke: 'rgba(200,180,140,.55)',
       'stroke-width': 1}));
   }
   svg.appendChild(g);
@@ -266,7 +338,7 @@ const WORK_STYLE = {
 };
 
 function drawWorksHit() {
-  if (state.view === 'meso') return;               // sub-Basin detail
+  if (state.cam.span > 3.5) return;                // sub-Basin detail
   const g = el('g', {'data-layer': 'works'});
   for (const f of D.geo.features) {
     const st = WORK_STYLE[f.kind];
@@ -329,7 +401,7 @@ const GROUP_R = {'Triple Alliance seat': 6, 'Rival empire': 5.5,
 
 function drawAltepetl() {
   const g = el('g', {'data-layer': 'altepetl'});
-  const labelBudget = state.view === 'meso' ? 5 : 4.4;
+  const labelBudget = state.cam.span > 6 ? 5 : 4.4;
   for (const e of ALTEPETL) {
     if (!activeAt(e, state.t)) continue;
     const st = allegianceAt(e, state.t);
@@ -430,8 +502,20 @@ function openCard(o) {
     `<span class="conf-${o.confidence}">${CONF_LABEL[o.confidence] || o.confidence}</span></div>`);
   $('#infoRows').innerHTML = rows.join('');
 
-  let body = esc(isEvent ? (o.text || '') : eraTextFor(o, state.t));
+  let body = '';
+  if (o.image) {
+    body += `<img class="cardimg" src="${esc(o.image.src)}" alt="">` +
+            `<div class="imgcap">${esc(o.image.caption)}</div>` +
+            `<div class="imgcredit">${esc(o.image.credit)}</div>`;
+  }
+  body += esc(isEvent ? (o.text || '') : eraTextFor(o, state.t));
   if (o.note) body += `<div class="note">${esc(o.note)}</div>`;
+  if (o.chapterEvents && o.chapterEvents.length) {
+    body += `<div class="tier">Events in this chapter` +
+            (o.nEvents > o.chapterEvents.length ? ` (first ${o.chapterEvents.length} of ${o.nEvents})` : '') +
+            `</div>` + o.chapterEvents.map(ev =>
+              `<div class="prow chev-ev" data-ev="${esc(ev.id)}">${esc(fmtT(ev.t))} — ${esc(ev.name)}</div>`).join('');
+  }
   if (o.accounts && o.accounts.length) {
     body += `<div class="tier">What the sources say</div>` + o.accounts.map(a =>
       `<div class="account"><div class="acc-src">${esc(a.source)}</div>` +
@@ -439,10 +523,27 @@ function openCard(o) {
       `<div class="acc-note">${esc(a.note)}</div></div>`).join('');
   }
   $('#infoDesc').innerHTML = body;
-  $('#infoSpan').textContent = isEvent ? '' : eraSpanFor(o, state.t);
+  $('#infoDesc').querySelectorAll('.chev-ev').forEach(d =>
+    d.onclick = () => {
+      const full = D.eventsFull.find(f => f.id === d.dataset.ev);
+      if (full) { seek(full.t); select(full); }
+    });
+  $('#infoSpan').textContent = isEvent ? '' : (o.kind === 'Chapter' ? '' : eraSpanFor(o, state.t));
   $('#infoCite').innerHTML = (o.sources || []).length
     ? 'Sources: ' + o.sources.map(esc).join(' · ') : '';
   $('#info').classList.remove('hidden');
+}
+
+// Chapters are cards too (round 3): the period's story, its image, its events.
+function chapterCard(era) {
+  return {
+    kind: 'Chapter', name: era.name,
+    facts: [['Span', `${fmtT(era.from)} – ${fmtT(era.to)}`],
+            ['Events inside', String(era.nEvents || 0)]],
+    text: (era.title ? era.title + '. ' : '') + (era.text || ''),
+    image: era.image, chapterEvents: era.chapterEvents, nEvents: era.nEvents,
+    sources: ['Chapter framing: this model (see About for the full source table)'],
+  };
 }
 
 // --------------------------------------------------------------- readout --
@@ -583,7 +684,11 @@ function buildChapters() {
   $('#chapterList').innerHTML = D.eras
     .map((e, i) => `<div data-i="${i}">${esc(e.name)}</div>`).join('');
   $('#chapterList').querySelectorAll('div').forEach(d =>
-    d.onclick = () => seek(D.eras[+d.dataset.i].from + 1e-4));
+    d.onclick = () => {
+      const era = D.eras[+d.dataset.i];
+      seek(era.from + 1e-4);
+      select(chapterCard(era));
+    });
 }
 
 function updateChapters() {
@@ -621,11 +726,52 @@ function jumpEvent(dir) {
   if (next != null) seek(next);
 }
 
+// ---- camera flights, wheel zoom, drag pan (round 3) ----------------------
+let camAnim = null;
+
+function flyTo(target, ms) {
+  const from = {...state.cam};
+  const t0 = performance.now();
+  if (camAnim) cancelAnimationFrame(camAnim);
+  const ease = u => u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+  const step = now => {
+    const u = Math.min(1, (now - t0) / ms);
+    const e = ease(u);
+    // interpolate span in log space so the flight feels uniform
+    state.cam = {
+      cx: from.cx + (target.cx - from.cx) * e,
+      cy: from.cy + (target.cy - from.cy) * e,
+      span: Math.exp(Math.log(from.span) + (Math.log(target.span) - Math.log(from.span)) * e),
+    };
+    render();
+    if (u < 1) camAnim = requestAnimationFrame(step);
+    else { camAnim = null; syncHash(); }
+  };
+  camAnim = requestAnimationFrame(step);
+}
+
 function setView(v) {
   state.view = v;
   $('#viewBtns').querySelectorAll('button').forEach(b =>
     b.classList.toggle('on', b.dataset.v === v));
-  render(); syncHash();
+  flyTo(camOf(D.meta.views[v]), 750);
+}
+
+function nearestPreset() {
+  let best = null, bestScore = 1e9;
+  for (const [id, v] of Object.entries(D.meta.views)) {
+    const c = camOf(v);
+    const score = Math.abs(Math.log(c.span / state.cam.span))
+                + Math.hypot(c.cx - state.cam.cx, c.cy - state.cam.cy) / c.span;
+    if (score < bestScore) { bestScore = score; best = id; }
+  }
+  return bestScore < 0.35 ? best : null;
+}
+
+function refreshViewButtons() {
+  const near = nearestPreset();
+  $('#viewBtns').querySelectorAll('button').forEach(b =>
+    b.classList.toggle('on', b.dataset.v === near));
 }
 
 // ------------------------------------------------------------------ hash --
@@ -636,13 +782,23 @@ function syncHash() {
   const now = performance.now();
   if (now - _lastHash < 300) return;
   _lastHash = now;
-  history.replaceState(null, '', `#t=${state.t.toFixed(4)}&v=${state.view}`);
+  const near = nearestPreset();
+  const v = near || `${state.cam.cx.toFixed(3)},${state.cam.cy.toFixed(3)},${state.cam.span.toFixed(3)}`;
+  history.replaceState(null, '', `#t=${state.t.toFixed(4)}&v=${v}`);
 }
 function readHash() {
   const m = /[#&]t=(-?\d+(?:\.\d+)?)/.exec(location.hash);
   if (m) state.t = Math.max(T0, Math.min(T1, parseFloat(m[1])));
-  const v = /[#&]v=(\w+)/.exec(location.hash);
-  if (v && D.meta.views[v[1]]) state.view = v[1];
+  const v = /[#&]v=([\w.,-]+)/.exec(location.hash);
+  if (v && D.meta.views[v[1]]) {
+    state.view = v[1];
+    state.cam = camOf(D.meta.views[v[1]]);
+  } else if (v) {
+    const parts = v[1].split(',').map(Number);
+    if (parts.length === 3 && parts.every(isFinite))
+      state.cam = {cx: parts[0], cy: parts[1], span: Math.max(0.05, Math.min(40, parts[2]))};
+  }
+  if (!state.cam) state.cam = camOf(D.meta.views[state.view]);
 }
 
 // ------------------------------------------------------------------ about --
@@ -709,7 +865,39 @@ function wire() {
     const l = $('#chapterList');
     l.style.display = l.style.display === 'none' ? '' : 'none';
   };
+
+  // camera: wheel zoom about the cursor, drag pan; a drag suppresses the
+  // click-to-dismiss so panning never closes the open card
+  svg.addEventListener('wheel', e => {
+    e.preventDefault();
+    const [lonA, latA] = unproject(e.clientX, e.clientY);
+    state.cam.span = Math.max(0.05, Math.min(40,
+      state.cam.span * Math.exp(e.deltaY * 0.0016)));
+    computeProj();
+    const [lonB, latB] = unproject(e.clientX, e.clientY);
+    state.cam.cx += lonA - lonB;
+    state.cam.cy += latA - latB;
+    render(); refreshViewButtons(); syncHash();
+  }, {passive: false});
+
+  let panStart = null, panned = false;
+  svg.addEventListener('pointerdown', e => {
+    panStart = {x: e.clientX, y: e.clientY, cx: state.cam.cx, cy: state.cam.cy};
+    panned = false;
+  });
+  svg.addEventListener('pointermove', e => {
+    if (!panStart || e.buttons === 0) return;
+    const dx = e.clientX - panStart.x, dy = e.clientY - panStart.y;
+    if (!panned && Math.hypot(dx, dy) < 5) return;
+    panned = true;
+    svg.setPointerCapture(e.pointerId);
+    state.cam.cx = panStart.cx - dx / (PROJ.kx * PROJ.s);
+    state.cam.cy = panStart.cy + dy / PROJ.s;
+    render(); refreshViewButtons();
+  });
+  svg.addEventListener('pointerup', () => { panStart = null; syncHash(); });
   svg.addEventListener('click', () => {
+    if (panned) { panned = false; return; }
     state.selection = null; $('#info').classList.add('hidden');
   });
 

@@ -1,10 +1,185 @@
 {
  "policy": {
-  "accept": ["public domain", "cc0", "pdm", "cc by 4.0", "cc by 3.0", "cc by 2.0",
-             "cc-by-4.0", "cc-by-3.0", "attribution"],
-  "refuse": ["share alike", "sharealike", "-sa", "noncommercial", "non-commercial",
-             "-nc", "noderivatives", "-nd", "fair use", "non-free"]
+  "accept": [
+   "public domain",
+   "cc0",
+   "pdm",
+   "cc by 4.0",
+   "cc by 3.0",
+   "cc by 2.0",
+   "cc-by-4.0",
+   "cc-by-3.0",
+   "attribution"
+  ],
+  "refuse": [
+   "share alike",
+   "sharealike",
+   "-sa",
+   "noncommercial",
+   "non-commercial",
+   "-nc",
+   "noderivatives",
+   "-nd",
+   "fair use",
+   "non-free"
+  ]
  },
  "warning": "verified_subject stays false until a human has looked at it. Correct licence does NOT imply correct subject - about a third of one project's first fetched batch was wrong.",
- "items": []
+ "items": [
+  {
+   "slug": "map-1524",
+   "query": "Map of Tenochtitlan and Gulf of Mexico 1524",
+   "file": "File:Map of Tenochtitlan and Gulf of Mexico, 1524.jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=152249456",
+   "author": "Hernán Cortés",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "the Nuremberg/Peypus 1524 woodcut map of Tenochtitlan",
+   "verified_subject": true,
+   "review": "the 1524 Nuremberg woodcut: circular Tenochtitlan plan + Gulf inset — correct"
+  },
+  {
+   "slug": "mendoza-founding",
+   "query": "Codex Mendoza folio 2r",
+   "file": "File:Codex Mendoza folio 2r book scan.jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=2470085",
+   "author": "unknown",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "Codex Mendoza frontispiece: the eagle on the cactus",
+   "verified_subject": true,
+   "review": "folio 2r, the eagle on the nopal in the lake's blue X — correct"
+  },
+  {
+   "slug": "mendoza-tribute",
+   "query": "Codex Mendoza folio 46r tribute",
+   "file": "File:Codex Mendoza folio 46r.jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=1292870",
+   "author": "unknown",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "a Codex Mendoza tribute-list folio",
+   "verified_subject": true,
+   "review": "tribute folio: town glyphs with feather/bin/greenstone tallies — correct"
+  },
+  {
+   "slug": "fc-smallpox",
+   "query": "Florentine Codex smallpox",
+   "file": "File:Healer (ticitl) tending to people suffering from smallpox in 1520 in Book 12 of the Florentine Codex, 1577.jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=181371497",
+   "author": "Bernardino de Sahagún.",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "Book XII drawing of smallpox victims",
+   "verified_subject": true,
+   "review": "Book XII plate, healer tending pustuled smallpox victims — correct"
+  },
+  {
+   "slug": "lienzo-meeting",
+   "query": "Lienzo de Tlaxcala Cortes Tlaxcala meeting",
+   "file": "File:Meetfigure11.jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=6745933",
+   "author": "Diego Muñoz Camargo",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "Lienzo de Tlaxcala plate: Tlaxcalteca lords meet Cortés",
+   "verified_subject": true,
+   "review": "Lienzo plate: Cortés seated, Malintzin interpreting centre, lord with fan — correct (also serves the Malintzin card)"
+  },
+  {
+   "slug": "lienzo-cholula",
+   "query": "Lienzo de Tlaxcala Cholula massacre",
+   "file": "File:Matanza de Cholula por conquistadores españoles Lienzo de Tlaxcala.jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=41858107",
+   "author": "Unknown authorUnknown author",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "Lienzo de Tlaxcala plate: the Cholula massacre",
+   "verified_subject": true,
+   "review": "Lienzo plate glossed 'Chololla': the massacre at the temple — correct"
+  },
+  {
+   "slug": "uppsala-map",
+   "query": "Uppsala map Mexico City 1550",
+   "file": "File:Vista parcial del centro de la Ciudad de México alrededor del año de 1550 según se muestra en el Mapa de Uppsala.jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=105272016",
+   "author": "Unknown authorUnknown author",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "the c. 1550 Mapa Uppsala of Mexico City",
+   "verified_subject": true,
+   "review": "Uppsala map c.1550 street-grid detail — correct"
+  },
+  {
+   "slug": "moctezuma",
+   "query": "Moctezuma II portrait Antonio Rodriguez",
+   "file": "File:Moctezuma Xocoyotzin.png",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=24502804",
+   "author": "attributed to Antonio Rodriguez (1636-1691)",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "a pre-1900 portrait of Moctezuma II",
+   "verified_subject": true,
+   "review": "full-length 17th-c 'Moctezuma Xocoyotzin' portrait — correct"
+  },
+  {
+   "slug": "cortes",
+   "query": "Hernan Cortes portrait 16th century",
+   "file": "File:Capitán general, Copia de un retrato de Hernán Cortés, ~1485 - 2-12-1547, retrato anónimo (1525).jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=119192391",
+   "author": "Unknown authorUnknown author",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "a pre-1900 portrait of Hernán Cortés",
+   "verified_subject": true,
+   "review": "17th-c copy portrait of Cortés with 1525 inscription — correct"
+  },
+  {
+   "slug": "fc-siege",
+   "query": "Florentine Codex conquista guerra Tenochtitlan",
+   "result": "NEGATIVE after retry — first licence-safe hit was a blank flyleaf of the book scan (licence right, subject wrong: TRAPS A4 in the flesh); second query returned nothing usable. Lienzo plates carry the battle imagery instead.",
+   "licence_ok": true,
+   "verified_subject": false
+  },
+  {
+   "slug": "toxcatl",
+   "query": "matanza Templo Mayor codex Duran",
+   "result": "negative — nothing acceptably licensed in top 8",
+   "licence_ok": false,
+   "verified_subject": false
+  },
+  {
+   "slug": "noche-triste",
+   "query": "Noche Triste",
+   "file": "File:The Sad Night (Noche Triste) (Conquest of Mexico) Painting.jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=146233568",
+   "author": "Unknown authorUnknown author",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "a pre-1900 depiction of the Noche Triste",
+   "verified_subject": true,
+   "review": "the 17th-c Kislak 'Sad Night' painting: night causeway battle under a crescent moon — correct"
+  },
+  {
+   "slug": "siege-painting",
+   "query": "Conquista de Mexico Kislak Tenochtitlan",
+   "result": "negative — nothing acceptably licensed in top 8",
+   "licence_ok": false,
+   "verified_subject": false
+  },
+  {
+   "slug": "malintzin",
+   "query": "La Malinche Florentine Codex",
+   "result": "negative — nothing acceptably licensed in top 8",
+   "licence_ok": false,
+   "verified_subject": false
+  },
+  {
+   "slug": "cuauhtemoc",
+   "query": "Cuauhtemoc Tovar codex",
+   "result": "negative — nothing acceptably licensed in top 8",
+   "licence_ok": false,
+   "verified_subject": false
+  }
+ ]
 }

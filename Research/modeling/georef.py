@@ -281,6 +281,69 @@ def dist_to_polygon_km(lat, lon, points):
 
 
 # ---------------------------------------------------------------------------
+# A2-b (round 3): the 1524 Nuremberg map, georeferenced and MEASURED
+# ---------------------------------------------------------------------------
+# Control points picked by inspection of the Newberry scan (public domain;
+# data/images-src/map-1524.img, 1920x1217; city panel west-up). Pixel picks
+# are +/- ~15 px; the residuals below are kilometre-scale, so pick error is
+# irrelevant to the finding. THE FINDING: the woodcut is a schematic diagram —
+# topology (what connects to what), not geometry. The affine best fit and its
+# residuals put a number on exactly how schematic, and the About panel carries
+# it, which is why the model never traces geometry from this map.
+
+NUREMBERG_CONTROL = [
+    # (px, py, anchor slug, what was picked)
+    (1306, 585, "templo-mayor", "the central precinct square"),
+    (766, 620, "iztapalapa-centre", "the southern causeway's shore end"),
+    (1301, 105, "chapultepec-springs", "the aqueduct's source at top (west)"),
+    (1776, 360, "tepeyac", "the northern causeway's shore end"),
+    (1841, 1150, "texcoco-centre", "the 'Tezcuco' shore label"),
+]
+
+
+def nuremberg_fit():
+    """Least-squares affine (lon,lat)->(px,py); returns (params, residuals_km)."""
+    pts = [(ANCHORS[a][1], ANCHORS[a][0], px, py, a, what)
+           for (px, py, a, what) in NUREMBERG_CONTROL]
+    n = len(pts)
+    # solve px = a*lon + b*lat + c ; py = d*lon + e*lat + f  (normal equations)
+    def solve(target_idx):
+        sxx = [[0.0] * 3 for _ in range(3)]
+        sxy = [0.0] * 3
+        for lon, lat, px, py, _a, _w in pts:
+            v = (lon, lat, 1.0)
+            t = (px, py)[target_idx]
+            for i in range(3):
+                for j in range(3):
+                    sxx[i][j] += v[i] * v[j]
+                sxy[i] += v[i] * t
+        # gaussian elimination, 3x3
+        m = [row[:] + [sxy[i]] for i, row in enumerate(sxx)]
+        for col in range(3):
+            piv = max(range(col, 3), key=lambda r: abs(m[r][col]))
+            m[col], m[piv] = m[piv], m[col]
+            for r in range(3):
+                if r != col and abs(m[col][col]) > 1e-12:
+                    f = m[r][col] / m[col][col]
+                    for c in range(4):
+                        m[r][c] -= f * m[col][c]
+        return [m[i][3] / m[i][i] for i in range(3)]
+
+    A = solve(0)
+    B = solve(1)
+    # invert the affine to map pixels back to lon/lat for the residuals
+    det = A[0] * B[1] - A[1] * B[0]
+    inv = (B[1] / det, -A[1] / det, -B[0] / det, A[0] / det)
+    residuals = []
+    for lon, lat, px, py, a, what in pts:
+        dx, dy = px - A[2], py - B[2]
+        lon2 = inv[0] * dx + inv[1] * dy
+        lat2 = inv[2] * dx + inv[3] * dy
+        residuals.append((a, what, dist_km(lat, lon, lat2, lon2)))
+    return (A, B), residuals
+
+
+# ---------------------------------------------------------------------------
 # the residual table — endpoints of drawn arteries vs the anchor table
 # ---------------------------------------------------------------------------
 
@@ -352,3 +415,10 @@ if __name__ == "__main__":
     for name in ("city-footprint", "lake-texcoco", "lake-xochimilco-chalco",
                  "lake-zumpango-xaltocan"):
         print(f"  area {name:22} {polygon_area_km2(GEOMETRY[name]['points']):7.1f} km²")
+    _, res = nuremberg_fit()
+    mean = sum(r for _, _, r in res) / len(res)
+    print(f"\nA2-b — the 1524 Nuremberg map, affine best fit ({len(res)} control points):")
+    for a, what, r in res:
+        print(f"  {a:20} {what:38} residual {r:5.1f} km")
+    print(f"  mean {mean:.1f} km — the woodcut is topology, not geometry; "
+          f"the model cites it and never traces it")

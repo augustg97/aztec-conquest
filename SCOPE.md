@@ -44,7 +44,8 @@ Show the scale on screen so nobody mistakes it for linear.
 
 | layer | kind | mechanism (if modelled) or source (if authored) | engine |
 |---|---|---|---|
-| Basin terrain and lake system c. 1519 | **authored** (reconstructed) | published lake-extent reconstruction (named, see SOURCE-SURVEY) + INEGI CEM 15 m DEM minus post-conquest drainage | field |
+| Regional terrain + ocean shelf | **authored** (measured data, rendered) | NASA SRTM elevation + NOAA ETOPO1 bathymetry (AWS terrain tiles), hillshaded per view; seasonal wet/dry palette **modelled**; amended 2026-07-27 (round 3) from the INEGI-CEM plan — same layer, better-licensed source at the model's scales | field (raster basemaps × season) |
+| Lake system c. 1519 | **authored** (reconstructed) | published lake-extent reconstruction (named, see SOURCE-SURVEY), drawn OVER the modern terrain — reconstruction over measurement, labelled | feature |
 | Lake level, seasonal and annual | **modelled** | rainfall seasonality over the closed basin, calibrated to the 1519 reconstruction; the dike of Nezahualcoyotl as a control structure | field |
 | Chinampa districts, causeways, dikes, aqueducts | **authored** | archaeology + the 1524 Nuremberg map + colonial surveys | feature |
 | Altepetl (city-states), ~200+ | **authored** | Codex Mendoza tribute provinces, archaeological gazetteers, Gerhard | feature |

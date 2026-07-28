@@ -226,6 +226,14 @@ EVENTS = [
          "claim": "evidence for the plot is unverifiable; the effect — terror through the region — is not in doubt",
          "note": "the model draws the event and lets the accounts disagree"},
       ]),
+    E("ordaz-popocatepetl", 1519, 10, 25, "month", "campaign",
+      "Ordaz climbs the smoking mountain", None,
+      "Diego de Ordaz and two companions climb Popocatépetl — in eruption "
+      "through these years — to the crater's rim, for sulphur, for "
+      "reconnaissance and for the astonishment of both armies. The volcano's "
+      "plume stood over the whole war; the model draws it for the attested "
+      "1519-1528 active period.",
+      "moderate", ["[C2]", "[BD]"], latlon=(19.023, -98.628)),
     E("cholula-realigned", 1519, 11, 1, "month", "political",
       "Cholula realigned under coalition lords", "cholula",
       "New lords acceptable to Tlaxcallan and the company are installed; the holy "

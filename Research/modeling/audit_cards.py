@@ -154,8 +154,28 @@ def check_anachronism(sub, F):
                 F("MED", "naming", owner, f"'{term}' in model text (allowed only in About)")
 
 
+def check_images(sub, F):
+    """Licence discipline on the cards: an image must carry caption AND credit."""
+    def probe(owner, img):
+        if not img:
+            return
+        if not img.get("src") or not img.get("credit") or not img.get("caption"):
+            F("HIGH", "images", owner, "image without src/caption/credit — licence "
+                                       "discipline broken")
+    for e in sub["entities"]:
+        probe(e["id"], e.get("image"))
+    for ev in sub["events"]:
+        probe(ev["id"], ev.get("image"))
+    n_ch = sum(1 for c in sub["chapters"] if c.get("image"))
+    for c in sub["chapters"]:
+        probe(f"chapter:{c['name']}", c.get("image"))
+    if n_ch < 8:
+        F("MED", "images", "chapters", f"only {n_ch} of {len(sub['chapters'])} chapters "
+                                       f"illustrated (< 8)")
+
+
 CHECKS = [check_tiling, check_chapters, check_contested, check_sources,
-          check_allegiance, check_dates, check_anachronism]
+          check_allegiance, check_dates, check_anachronism, check_images]
 
 
 def run():
@@ -175,7 +195,8 @@ def _selftest():
     sub = {
         "which": "synthetic",
         "meta": {"t0": 0.0, "t1": 10.0},
-        "chapters": [{"from": 0.0, "to": 4.0, "name": "a", "text": "x" * 40},
+        "chapters": [{"from": 0.0, "to": 4.0, "name": "a", "text": "x" * 40,
+                      "image": {"src": "x.jpg"}},                     # image, no credit!
                      {"from": 5.0, "to": 10.0, "name": "b", "text": "y" * 40}],  # gap!
         "entities": [
             {"id": "ok", "layer": "altepetl", "confidence": "good", "sources": ["s"],
@@ -201,7 +222,7 @@ def _selftest():
     got = {(f["check"], f["what"]) for f in findings}
     expect = {("chapters", "a"), ("tiling", "bad"), ("contested", "bad"),
               ("contested", "e1"), ("sources", "bad"), ("allegiance", "bad"),
-              ("dates", "e1"), ("anachronism", "e1")}
+              ("dates", "e1"), ("anachronism", "e1"), ("images", "chapter:a")}
     missing = expect - got
     assert not missing, f"selftest: checks failed to fire: {missing}"
     print(f"selftest OK — all {len(CHECKS)} checks fire on synthetic defects "

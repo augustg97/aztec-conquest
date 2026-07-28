@@ -16,7 +16,13 @@ that pulled the Mexica empire apart.
 
 ## State right now
 
-Kickoff → round 1 → ship v1.0 → **round 2 → ship v1.1** are complete. The app is a working
+Kickoff → v1.0 → v1.1 → **round 3 → ship v2.0** are complete. Round 3 (downloads approved by
+the user) added: the real terrain field (SRTM+ETOPO, seasonal wet/dry, clouds, the attested
+Popocatépetl plume), the continuous camera (wheel/drag/flights), the 1524 map measured (2.2 km
+mean residual — topology not geometry), 10 subject-verified PD card images with credits
+(audit-enforced; 5 honest negatives in the manifest), and chapters as illustrated cards.
+`build/terrain.py` and `build/fetch_images.py` are the new pipelines (venv/ holds numpy+Pillow;
+data/ caches tiles/scans, both gitignored). The app is a working
 model: 75 altepetl coloured by a per-day allegiance machine, **89 events** (23 with "What the
 sources say"), **18 people cards**, the González Aparicio lake system with clickable works,
 **a full land/sea/sierra substrate** (round 2 — a user report of "just a black background"

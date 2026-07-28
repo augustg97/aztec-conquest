@@ -114,14 +114,21 @@ re-litigate):
 
 ---
 
-**Count: 6 open items — 0 at P1, none user-visible.** Remaining, in value order — note the
-first two need EXTERNAL DATA the session cannot fetch without the user (file downloads):
+**Round 3 (downloads approved) closed the externals:**
 
-1. **A2-b** trace González Aparicio + the 1524 Nuremberg map from scans (needs the scans
-   downloaded; the 24 MB Newberry file is public domain).
-2. **A2-d** Basin terrain field from INEGI CEM (needs the DEM download; area-selection route).
-3. **A2-c** chinampa districts (authorable from literature descriptions; medium).
-4. **B1-b** remaining Mendoza roster (the omitted provinces are omitted BECAUSE poorly
-   located — adding them means researching locations, not typing names).
-5. **B2-d-rest** people 18 → ~40; **B2-b** page/folio-level source pinning.
-6. **B2-c** Mexica counter-diplomacy reversions (thin evidence; may close negative).
+| # | outcome |
+|---|---|
+| A2-d | **APPLIED** — terrain field from SRTM+ETOPO (AWS terrain tiles; INEGI plan amended in SCOPE — better-licensed source at these scales): 6 basemaps, 1.21 MB, self-checked (Popocatépetl 5,386 m vs 5,393 real; lakebed 2,232 m; Gulf -1,930 m); seasonal wet/dry compositing + clouds + attested 1519-28 plume ('Ordaz' event); continuous camera with preset flights |
+| A2-b | **RESOLVED, measured** — 1524 Nuremberg map georeferenced on 5 control points: mean residual **2.2 km**, max 5.5 km at the city → topology, not geometry; stated in About; González Aparicio scan still unconsulted (remains below) |
+| Images | **DELIVERED** — 10 public-domain card images fetched, subject-verified (1 blank-flyleaf rejected — TRAPS A4 fired again), credited on every card, audit-enforced; **5 recorded negatives** (toxcatl, siege-painting, malintzin*, cuauhtemoc, fc-siege) — *Malintzin card uses the Lienzo meeting scene where she is the central figure |
+| Chapters | **DELIVERED** — chapter cards with image, span, story and clickable event list; 9 of 10 illustrated (ring-closes open) |
+
+**Count: 5 open items — 0 at P1.**
+
+1. **A2-b-rest** consult González Aparicio (1973) in facsimile and trace properly (no
+   licence-safe digital scan surfaced; likely a library visit).
+2. **A2-c** chinampa districts (authorable; medium).
+3. **B1-b** remaining Mendoza roster (location research).
+4. **B2-d-rest** people 18 → ~40; images for the 5 negatives; ring-closes chapter image;
+   **B2-b** page/folio pinning.
+5. **B2-c** reversions (thin; may close negative). Polish: basin/meso zoom seam.

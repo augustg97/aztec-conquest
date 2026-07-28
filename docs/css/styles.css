@@ -153,8 +153,40 @@ input[type=range]{width:88px;accent-color:var(--accent)}
 .acc-claim{font-size:11.5px;color:#cfd6e0}
 .acc-note{font-size:10px;color:var(--faint);font-style:italic;margin-top:2px}
 .note{margin-top:7px;font-size:11px;color:var(--dim);font-style:italic}
+.cardimg{width:100%;max-height:200px;object-fit:cover;border-radius:7px;
+  border:1px solid var(--edge);margin-bottom:5px}
+.imgcap{font-size:10.5px;color:var(--dim);font-style:italic;margin-bottom:1px}
+.imgcredit{font-size:9px;color:var(--faint);margin-bottom:9px}
+.chev-ev{font-size:11px}
 .conf-contested{color:#d9a441;letter-spacing:.06em;font-size:10.5px}
 .conf-good{color:#7fbf9b}.conf-moderate{color:var(--dim)}
+
+/* --------------------------------------------------------- atmosphere -- */
+/* Clouds are screen-space atmosphere (density follows the wet season);
+   the plume is geo-anchored by JS to Popocatépetl for its attested active
+   years. Both live outside the SVG so their animations survive re-renders. */
+#clouds{position:absolute;inset:0;pointer-events:none;overflow:hidden;
+  transition:opacity 1.2s;z-index:5}
+.cloud{position:absolute;width:46vw;height:30vh;border-radius:50%;
+  background:radial-gradient(ellipse at center,rgba(255,255,255,.085),rgba(255,255,255,0) 65%);
+  filter:blur(6px)}
+.c1{top:12%;animation:drift1 96s linear infinite}
+.c2{top:44%;animation:drift2 140s linear infinite;width:60vw}
+.c3{top:70%;animation:drift3 118s linear infinite;width:38vw}
+@keyframes drift1{from{left:-50vw}to{left:105vw}}
+@keyframes drift2{from{left:110vw}to{left:-65vw}}
+@keyframes drift3{from{left:-40vw}to{left:108vw}}
+#plume{position:absolute;width:18px;height:34px;pointer-events:none;z-index:6;
+  transform-origin:bottom center}
+.puff{position:absolute;left:5px;bottom:0;width:9px;height:9px;border-radius:50%;
+  background:rgba(205,200,195,.5);filter:blur(2px);
+  animation:rise 7s ease-out infinite}
+.puff.p2{animation-delay:2.3s;background:rgba(190,185,182,.42)}
+.puff.p3{animation-delay:4.6s;background:rgba(215,212,208,.38)}
+@keyframes rise{
+  0%{transform:translate(0,0) scale(.55);opacity:0}
+  12%{opacity:.85}
+  100%{transform:translate(9px,-30px) scale(2.1);opacity:0}}
 
 /* ------------------------------------------------------ substrate / people -- */
 .sealab{font-size:11px;fill:rgba(140,170,205,.5);font-style:italic;

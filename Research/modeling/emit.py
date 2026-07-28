@@ -370,9 +370,97 @@ def build_events_js():
     return evs
 
 
+# Card images (round 3): every entry verified visually against its subject
+# (figures/collected/MANIFEST.json carries the review); all public domain,
+# served downscaled from web/img/cards/. Credits render on every card that
+# uses one — an image without its credit is an audit failure.
+_C = "public domain, via Wikimedia Commons"
+IMAGES = {
+    "map-1524": {"src": "img/cards/map-1524.jpg",
+                 "caption": "The 1524 Nuremberg woodcut: Tenochtitlan as Europe first saw it "
+                            "— schematic (best-fit residual 2.2 km), west at top",
+                 "credit": f"Newberry Library scan, {_C}"},
+    "mendoza-founding": {"src": "img/cards/mendoza-founding.jpg",
+                         "caption": "Codex Mendoza fol. 2r: the eagle on the nopal — the founding "
+                                    "of Tenochtitlan, painted by Nahua scribes c. 1541",
+                         "credit": f"Bodleian Library MS. Arch. Selden. A. 1, {_C}"},
+    "mendoza-tribute": {"src": "img/cards/mendoza-tribute.jpg",
+                        "caption": "A Codex Mendoza tribute folio: town glyphs and their "
+                                   "semi-annual dues in cloth, feathers and stone",
+                        "credit": f"Bodleian Library, {_C}"},
+    "fc-smallpox": {"src": "img/cards/fc-smallpox.jpg",
+                    "caption": "Book XII: a healer tends smallpox victims, drawn by Nahua "
+                               "artists who lived the epidemic's aftermath",
+                    "credit": f"Florentine Codex, Biblioteca Medicea Laurenziana, {_C}"},
+    "lienzo-meeting": {"src": "img/cards/lienzo-meeting.jpg",
+                       "caption": "The Lienzo de Tlaxcala: Cortés and the lords of Tlaxcallan "
+                                  "— Malintzin interpreting at the centre",
+                       "credit": f"Lienzo de Tlaxcala (c. 1552), {_C}"},
+    "lienzo-cholula": {"src": "img/cards/lienzo-cholula.jpg",
+                       "caption": "The Lienzo de Tlaxcala's Cholula plate — the massacre as the "
+                                  "coalition's own artists recorded it",
+                       "credit": f"Lienzo de Tlaxcala (c. 1552), {_C}"},
+    "noche-triste": {"src": "img/cards/noche-triste.jpg",
+                     "caption": "The Sad Night, from the 17th-century Conquest of Mexico "
+                                "series: the causeway fight under a crescent moon",
+                     "credit": f"17th-c. oil, Library of Congress (Kislak), {_C}"},
+    "uppsala-map": {"src": "img/cards/uppsala-map.jpg",
+                    "caption": "The Uppsala map, c. 1550: Mexico City drawn by Nahua hands a "
+                               "generation after the fall — the world this model ends in",
+                    "credit": f"Mapa Uppsala (c. 1550), {_C}"},
+    "moctezuma": {"src": "img/cards/moctezuma.jpg",
+                  "caption": "Moctezuma II as the 17th century imagined him — a portrait of "
+                             "memory, not of life",
+                  "credit": f"attr. school of Antonio Rodríguez, {_C}"},
+    "cortes": {"src": "img/cards/cortes.jpg",
+               "caption": "Cortés in a copy portrait inscribed 1525 — the commander as his "
+                          "own century painted him",
+               "credit": f"anonymous copy portrait, {_C}"},
+}
+
+# where each image goes: chapters by name, events/people/works by id
+CHAPTER_IMAGE = {"The Fifth Sun": "mendoza-founding", "Landfall": "lienzo-meeting",
+                 "The hostage regime": "moctezuma", "Rupture": "noche-triste",
+                 "The plague year": "fc-smallpox", "The siege": "map-1524",
+                 "The world remade": "mendoza-tribute",
+                 "Conquistador New Spain": "cortes", "Viceroyalty": "uppsala-map"}
+ENTITY_IMAGE = {"cholula-massacre": "lienzo-cholula", "tlaxcala-alliance": "lienzo-meeting",
+                "entry-tenochtitlan": "moctezuma", "moctezuma-dies": "moctezuma",
+                "noche-triste": "noche-triste", "smallpox-basin": "fc-smallpox",
+                "fall-tenochtitlan": "map-1524", "codex-mendoza-made": "mendoza-tribute",
+                "congregacion-1550": "uppsala-map",
+                "person-moctezuma-ii": "moctezuma", "person-cortes": "cortes",
+                "person-malintzin": "lienzo-meeting", "city-footprint": "map-1524"}
+
 # In-app update log — written for a reader, not a changelog: the effect first,
 # the number as evidence. Rendered in the About panel.
 UPDATES = [
+    {"version": "2.0", "date": "27 July 2026",
+     "title": "A living landscape, a continuous camera, and the record illustrated",
+     "summary": "The map becomes terrain: real elevation and ocean depth (NASA SRTM and "
+                "NOAA ETOPO), hillshaded and breathing with the wet and dry seasons. The "
+                "camera zooms freely between the scales. Chapters open as illustrated "
+                "cards, and the record's own images — codices, the Lienzo, the 1524 "
+                "woodcut — appear on the cards they belong to, each with its credit.",
+     "items": [
+         "Terrain everywhere: the Basin's ravined sierra, the drained lakebed under the "
+         "reconstructed 1519 lakes, the Gulf's turquoise shelf and the Pacific trench — "
+         "measured data, rendered wet and dry; the seasons crossfade as the year turns.",
+         "Popocatépetl smokes for its attested 1519-1528 active years (see 'Ordaz climbs "
+         "the smoking mountain'), and cloud shadows thicken with the rains.",
+         "Zoom with the wheel, pan by dragging, or fly between the three named scales; "
+         "the terrain streams in sharper as you approach.",
+         "Chapters are cards now: click one for the period's story, its image and its "
+         "events. Ten illustrated with the record's own pictures — Mendoza folios, Book "
+         "XII's smallpox plate, the Lienzo de Tlaxcala, the Kislak Sad Night, the "
+         "Uppsala map.",
+         "The 1524 Nuremberg map is georeferenced and measured: best-fit residual 2.2 km "
+         "(5.5 km at the city) — beautiful topology, unusable geometry, and the About "
+         "panel now says exactly that with the number.",
+         "Every image is public domain, subject-verified, and credited on its card; the "
+         "five searches that found nothing licence-safe are recorded as negatives in the "
+         "manifest rather than papered over.",
+     ]},
     {"version": "1.1", "date": "27 July 2026",
      "title": "The land under the war — and the war's slower weapons",
      "summary": "The map now has its ground: coasts, seas, the sierras and the named "
@@ -447,6 +535,9 @@ ABOUT = {
         "the correlation itself is contested and is labelled as such.",
         "Allegiance below the altepetl is not modelled; 'contested' is the resolution "
         "floor. Post-war absorption dates marked 'modelled' are defaults, not records.",
+        "The 1524 Nuremberg woodcut is georeferenced and measured at a mean best-fit "
+        "residual of 2.2 km (5.5 km at the city itself): topology, not geometry. It "
+        "appears here as a document, and nothing in the model traces it.",
     ],
     "sources": [
         "Cortés, Cartas de relación (1519-26) — a legal self-defence, used as such",
@@ -456,6 +547,12 @@ ABOUT = {
         "Codex Mendoza (Berdan & Anawalt 1992); Gerhard (1972); Smith & Berdan (1996)",
         "González Aparicio (1973), Plano reconstructivo — the named lake reconstruction",
         "Thomas (1993); Hassig (2006); Gibson (1964) — modern chronology and aftermath",
+        "Terrain: NASA/USGS SRTM elevation and NOAA ETOPO1 bathymetry via the AWS Open "
+        "Data Terrain Tiles (Mapzen terrarium) — public domain sources, rendered by this "
+        "project's own pipeline; the seasonal palette is a modelled rendering choice",
+        "Card images: public-domain scans via Wikimedia Commons (Newberry Library; "
+        "Bodleian; Biblioteca Medicea Laurenziana; Library of Congress/Kislak; Uppsala "
+        "University Library), each subject-verified and credited on its card",
     ],
 }
 
@@ -521,9 +618,24 @@ def emit():
         "updates": UPDATES,
     }
 
+    # attach images (with credit — audited) and per-chapter event listings
+    for e in ents + evs:
+        img = ENTITY_IMAGE.get(e["id"])
+        if img:
+            e["image"] = IMAGES[img]
+    chapters = [dict(c) for c in CHAPTERS]
+    for c in chapters:
+        img = CHAPTER_IMAGE.get(c["name"])
+        if img:
+            c["image"] = IMAGES[img]
+        inside = [ev for ev in evs if c["from"] <= ev["t"] < c["to"]]
+        c["chapterEvents"] = [{"t": ev["t"], "name": ev["name"], "id": ev["id"]}
+                              for ev in inside[:10]]
+        c["nEvents"] = len(inside)
+
     files = []
     files.append(write("meta.js", header + "DATA.meta = " + j(meta) + ";\n"))
-    files.append(write("eras.js", header + "DATA.eras = " + j(CHAPTERS) + ";\n"
+    files.append(write("eras.js", header + "DATA.eras = " + j(chapters) + ";\n"
                        + "DATA.events = " + j([{"t": e["t"], "name": e["name"],
                                                 "id": e["id"]} for e in evs]) + ";\n"))
     files.append(write("entities.js", header + "DATA.entities = " + j(ents) + ";\n"))
