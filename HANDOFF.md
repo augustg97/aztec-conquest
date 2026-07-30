@@ -16,8 +16,24 @@ that pulled the Mexica empire apart.
 
 ## State right now
 
-Kickoff → v1.0 → v1.1 → v2.0 → v2.1 → v2.2 → **round 6, the rendering loop → v2.3** are
-complete. Round 6 rebuilt the visual layer: a **canvas world layer** under the SVG carries
+Kickoff → v1.0 → v1.1 → v2.0 → v2.1 → v2.2 → round 6 (the rendering loop) → v2.3 →
+**round 7 (the water loop, then the register) → v2.4** are complete.
+
+**Round 7** finished the user's lake work and then went through the register itself. Closed
+**A2-c** (the four chinampa districts, *derived* from the shoreline rather than drawn — the
+selftest asserts every vertex lies in the lake) and **B1-b** (82 polities, 37 of ~38 Mendoza
+provinces). **Implemented B2-c** rather than closing it negative: excluding reversions had made
+the allegiance machine monotone — every defection permanent, holding ground free — and Chalco
+now runs tributary → coalition → *contested* → coalition → new-spain. **B2-d** advanced 18 → 30
+people, correcting a bias in the first cast (three Mexica lords against six Spaniards, which
+quietly argued against this model's own thesis). SCOPE §10's byte budget was amended 25 → 45 MB
+with the reasoning recorded. See MODEL-GAPS "Round 7" for the APPLIED table and the eight
+honest corrections — including a per-plot draw that cost 9.6 ms/frame until it was batched by
+crop colour (0.16 ms), and the **third** appearance of the stale-dev-JS trap, where two
+screenshots came back pixel-identical after real edits.
+
+**Four items remain open, none at P1**, and one of them (A2-b-rest, the González Aparicio
+facsimile) cannot be done from a terminal — it needs a library visit. Round 6 rebuilt the visual layer: a **canvas world layer** under the SVG carries
 terrain, lakes and a full procedural urban fabric (blocks, courtyard compounds, canals,
 jetties, precinct architecture, colonial traza), every altepetl draws its own town on its own
 plan, the siege is legible on the ground, and landscape detail is grown from the measured

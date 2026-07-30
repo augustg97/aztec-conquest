@@ -521,6 +521,39 @@ ENTITY_IMAGE = {"cholula-massacre": "lienzo-cholula", "tlaxcala-alliance": "lien
 # In-app update log — written for a reader, not a changelog: the effect first,
 # the number as evidence. Rendered in the About panel.
 UPDATES = [
+    {"version": "2.4", "date": "30 July 2026",
+     "title": "The chinampas, and a war that could go backwards",
+     "summary": "The southern lakes get the thing they existed for: four "
+                "districts of raised fields, drawn where the lake was shallow "
+                "enough to build in. And the allegiance model stops pretending "
+                "the war ran one way — Chalco changes sides, gets taken back, "
+                "and is taken again.",
+     "items": [
+         "The chinampa districts of Xochimilco, Cuitláhuac, Mízquic and Chalco. "
+         "Their extents are not drawn by hand — each is the lake's own shoreline "
+         "over a named stretch, pushed inward by a stated width and stopped at "
+         "the far shore where the lake is too narrow. Zoom in and the individual "
+         "plots resolve, standing out of their ditch water with the willow rows "
+         "that held their edges together.",
+         "They come to about 46 km² against roughly 120 km² for the real system. "
+         "The difference is this model's simplified lake, not a claim that the "
+         "chinampería was smaller — and widening the districts alone to match the "
+         "literature would have put fields in open water to make a total look right.",
+         "Allegiance can now run backwards. Excluding the Mexica counter-offensive "
+         "had quietly made every defection permanent and made holding ground free; "
+         "Chalco now goes tributary, coalition, contested, coalition. The event for "
+         "the Mexica counter-attack had been on the map since round 2 with nothing "
+         "attached to it.",
+         "Twelve more people, chosen to correct the cast: the other two Triple "
+         "Alliance seats, the chief minister who administered the empire and then "
+         "its conquest, Tlatelolco's governor, one ordinary soldier who is named "
+         "only because his own city's elders insisted, and the witnesses whose "
+         "books every other card here cites.",
+         "Seven frontier provinces of the tribute roll that had been left out are "
+         "now in, each marked as a province we can name and a town we cannot place.",
+         "The lake's surface no longer carries the pale streaks reported last "
+         "round; the light on the water is softer and reads as depth.",
+     ]},
     {"version": "2.3", "date": "28 July 2026",
      "title": "The city, built",
      "summary": "Tenochtitlan is no longer an outline with dots on it. Zoom in and the "
