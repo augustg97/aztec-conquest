@@ -661,6 +661,88 @@ function crinkled(id, pts, amp) {
   return out;
 }
 
+/* The depth ramp. k: 0 = deep, 1 = the waterline. Deliberately NOT linear —
+ * the plateau from the shore out, then a steepening, is what reads as a shelf
+ * break; a straight interpolation reads as a gradient and nothing else. */
+const DEPTH_STOPS = [
+  [0.00, 18, 44, 88, 1.00],      // the deep middle
+  [0.22, 26, 62, 112, 1.00],
+  [0.42, 40, 92, 145, 0.99],
+  [0.55, 62, 126, 172, 0.97],    // the break
+  [0.68, 96, 164, 190, 0.92],
+  [0.82, 132, 192, 202, 0.84],   // the shoal
+  [0.93, 168, 212, 210, 0.72],
+  [1.00, 196, 226, 218, 0.55],   // the waterline, where the bed shows through
+];
+
+function depthColour(k, wet) {
+  let a = DEPTH_STOPS[0], b = DEPTH_STOPS[DEPTH_STOPS.length - 1];
+  for (let i = 0; i < DEPTH_STOPS.length - 1; i++) {
+    if (k >= DEPTH_STOPS[i][0] && k <= DEPTH_STOPS[i + 1][0]) {
+      a = DEPTH_STOPS[i]; b = DEPTH_STOPS[i + 1]; break;
+    }
+  }
+  const u = (k - a[0]) / Math.max(1e-6, b[0] - a[0]);
+  const c = j => Math.round(a[j] + (b[j] - a[j]) * u);
+  const al = (a[4] + (b[4] - a[4]) * u) * (0.93 + 0.07 * wet);
+  return `rgba(${c(1)},${c(2)},${c(3)},${al.toFixed(3)})`;
+}
+
+function deepColour(wet) { return depthColour(0, wet); }
+
+/* Lake-bed fabric. A shallow saline lake is not a flat colour: it carries
+ * shoals and sediment plumes, and its margins are tule beds. Rooted in what
+ * the Basin's lakes were — saline and shoal-ridden in Texcoco, spring-fed and
+ * weed-green in the southern lakes — and world-anchored so it holds still. */
+function drawLakeBed(f, pts) {
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  // Bound the work to what is ON SCREEN, not to the whole lake: iterating the
+  // full bbox at every zoom cost 52 ms/frame with most of it off-camera.
+  const vSpan = state.cam.span, vLatH = PROJ.H / PROJ.s;
+  const lo0 = Math.max(Math.min(...xs), state.cam.cx - vSpan / 2 - 0.01);
+  const lo1 = Math.min(Math.max(...xs), state.cam.cx + vSpan / 2 + 0.01);
+  const la0 = Math.max(Math.min(...ys), state.cam.cy - vLatH / 2 - 0.01);
+  const la1 = Math.min(Math.max(...ys), state.cam.cy + vLatH / 2 + 0.01);
+  if (lo1 <= lo0 || la1 <= la0) return;
+  const fresh = f.id !== 'lake-texcoco';
+  // constant screen density, so the cost does not grow as you zoom out
+  const step = Math.max(0.00035, (lo1 - lo0) / 105);
+  for (let la = la0; la < la1; la += step) {
+    for (let lo = lo0; lo < lo1; lo += step) {
+      const n = smoothNoise(lo, la, 0.013) * 0.6 + smoothNoise(lo, la, 0.004) * 0.4;
+      if (n < 0.46) continue;
+      const [bx, by] = project(lo, la);
+      if (bx < -20 || by < -20 || bx > PROJ.W + 20 || by > PROJ.H + 20) continue;
+      const s = Math.round(lo * 1e5) * 47 + Math.round(la * 1e5);
+      const r = step * PROJ.s * (0.5 + rnd(s) * 0.55);
+      // subtle, and mostly DARKER — the reference's sea floor is fabric you
+      // half-see, not foam. The first attempt at 0.26 alpha in pale tones
+      // covered the lake in cloud.
+      const strength = Math.min(0.085, (n - 0.46) * 0.24);
+      const pale = n > 0.72;
+      ctx.fillStyle = pale
+        ? (fresh ? `rgba(120,170,140,${strength.toFixed(3)})`
+                 : `rgba(196,208,200,${strength.toFixed(3)})`)
+        : (fresh ? `rgba(24,58,60,${(strength * 1.5).toFixed(3)})`
+                 : `rgba(16,40,74,${(strength * 1.5).toFixed(3)})`);
+      // fabric, not blobs: each shoal is elongated along a slowly-turning
+      // field, the way a lake bed's shoals lie along the prevailing set
+      const ang = (smoothNoise(lo, la, 0.030) - 0.5) * 2.4 + 0.5;
+      ctx.beginPath();
+      ctx.ellipse(bx, by, r * 3.4, r * 0.55, ang, 0, 7);
+      ctx.fill();
+    }
+  }
+  // tule beds: the reed margin every account of these lakes mentions
+  ctx.strokeStyle = fresh ? 'rgba(74,116,72,.40)' : 'rgba(104,128,96,.32)';
+  ctx.lineWidth = Math.max(0.6, 0.00005 * PROJ.s);
+  cpath(pts, true);
+  ctx.setLineDash([Math.max(2, 0.0004 * PROJ.s), Math.max(2, 0.0006 * PROJ.s)]);
+  ctx.lineWidth = Math.max(1.2, 0.00035 * PROJ.s);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
 function drawLakes(wet) {
   const zoomed = state.cam.span < 3.0;
   for (const f of D.geo.features) {
@@ -669,21 +751,28 @@ function drawLakes(wet) {
     ctx.save();
     cpath(pts, true);
     ctx.clip();
-    // deep water first
-    ctx.fillStyle = `rgba(48,92,134,${(0.60 + 0.10 * wet).toFixed(3)})`;
+    // OPAQUE water with a hypsometric depth ramp. The reference's ocean works
+    // because deep water is opaque and dark while the shelf is pale and you
+    // can see structure in it — a translucent wash over the hillshade reads as
+    // cellophane, not water. So: fill deep and solid, then lay the shallows
+    // back in from the true shoreline, with a SHELF BREAK where the ramp
+    // steepens (in Texcoco's case the drop off the shoal into the deeper
+    // middle, a matter of a couple of metres but the sharpest gradient there).
+    ctx.fillStyle = deepColour(wet);
     ctx.fill();
-    // then the shallows, banded inward from the true shoreline. Texcoco was a
-    // metre or three deep over most of its area, so the shelf is broad and the
-    // falloff gentle — many light passes, not a few hard ones.
-    const shelf = Math.max(4, 0.0075 * PROJ.s);
-    for (let i = 0; i < 14; i++) {
-      const k = i / 14;
+    const shelf = Math.max(5, 0.0125 * PROJ.s);
+    const N = 26;
+    for (let i = 0; i < N; i++) {
+      const k = i / N;                             // 0 = deepest pass, 1 = shore
       cpath(pts, true);
-      ctx.lineWidth = shelf * Math.pow(1 - k, 1.5) * 2;
-      ctx.strokeStyle = `rgba(${96 + k * 62},${152 + k * 46},${182 + k * 38},` +
-                        `${(0.10 + k * 0.13).toFixed(3)})`;
+      ctx.lineWidth = shelf * Math.pow(1 - k, 1.35) * 2;
+      ctx.strokeStyle = depthColour(k, wet);
       ctx.stroke();
     }
+    // the bed itself, seen through the shallows: salt shoal, sediment and the
+    // tule beds of a lake margin — the equivalent of the reference's sea-floor
+    // fabric, at a lake's scale
+    if (zoomed) drawLakeBed(f, pts);
     if (zoomed) {
       // ripple, world-anchored so it does not swim
       ctx.strokeStyle = 'rgba(226,240,250,.07)';
@@ -831,6 +920,12 @@ function drawCityFabric() {
     });
     ctx.stroke();
   };
+  // The grid belongs to the ISLAND. Without this clip the canals ruled on
+  // across open water to the bbox corners — visible as a square lattice out
+  // in the lake, and a plain falsehood about where the city was.
+  ctx.save();
+  cpath(fp, true);
+  ctx.clip();
   let li = 0;
   for (let lat = ISLAND_BBOX.lat0; lat < ISLAND_BBOX.lat1; lat += BLOCK, li++) {
     const base = lat + jit(li);
@@ -846,8 +941,10 @@ function drawCityFabric() {
       pts.push([base + wob(li, lat * 1e4), lat]);
     line(li % 2 === 1, pts, li);
   }
+  ctx.restore();
 
-  // 3b — the causeways run THROUGH the city as its widest ground
+  // 3b — the causeways run THROUGH the city as its widest ground (NOT clipped:
+  // a causeway's whole point is that it crosses the water)
   for (const f of D.geo.features) {
     if (f.kind !== 'causeway' && f.kind !== 'aqueduct') continue;
     cpath(f.points, false);
