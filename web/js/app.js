@@ -1622,12 +1622,38 @@ const TERRAIN = [
   {id: 'city'},
 ];
 
+/* The terrain levels stack — the coarse one stays opaque and the fine one
+ * fades in over it — so mid-fade the screen shows 0.5*coarse + 0.5*fine. Both
+ * rasters carry the same mountains, but their hillshades are only correlated
+ * r=0.89 (meso/corridor) and r=0.95 (corridor/basin), so averaging them does
+ * not blend, it DILUTES: high-pass detail energy dips about 10% at the 50/50
+ * point of each transition. Small, but it is a visible softening exactly while
+ * the camera is moving.
+ *
+ * MEASURED, and smaller than it first looked: an earlier pass put the dip at
+ * 48% by comparing basin against MESO — wrong base layer. By the time basin
+ * fades in, corridor is already fully opaque, and corridor carries 93.7% of
+ * basin's detail. Measure against what is actually on screen underneath.
+ *
+ * Easing hard through the middle cannot fix the worst case (the 50/50 point is
+ * crossed either way, and stays at ~90%) but it cuts how long the camera sits
+ * near it — alpha is between 0.3 and 0.7 for 11% of the band instead of 40%.
+ * Mean detail across the band: meso->corridor 92.9% -> 97.4%, corridor->basin
+ * 92.5% -> 95.3%. The curve is gentle at both ends, which is what stops a pop.
+ * Band widths are unchanged; only the shape was wrong. */
+function _snap(t, k = 4) {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  const a = Math.pow(t, k), b = Math.pow(1 - t, k);
+  return a / (a + b);
+}
+
 function terrainAlpha(id) {
   const span = state.cam.span;
   if (id === 'meso') return 1;
-  if (id === 'corridor') return Math.max(0, Math.min(1, (7.5 - span) / 1.8));
-  if (id === 'basin') return Math.max(0, Math.min(1, (2.6 - span) / 0.7));
-  return Math.max(0, Math.min(1, (0.55 - span) / 0.18));
+  if (id === 'corridor') return _snap(Math.max(0, Math.min(1, (7.5 - span) / 1.8)));
+  if (id === 'basin') return _snap(Math.max(0, Math.min(1, (2.6 - span) / 0.7)));
+  return _snap(Math.max(0, Math.min(1, (0.55 - span) / 0.18)));
 }
 
 /* The vector half of the substrate. The raster half (background, seas,
@@ -2361,8 +2387,16 @@ function openCard(o) {
       if (full) { seek(full.t); select(full); }
     });
   $('#infoSpan').textContent = isEvent ? '' : (o.kind === 'Chapter' ? '' : eraSpanFor(o, state.t));
+  // Sources, with the pinned passage shown against the source it belongs to
+  // where this model can locate one (register B2-b). A source with no pin is
+  // not a lapse: its date comes from the modern chronologies synthesising
+  // several accounts, and there is no single passage to point at.
   $('#infoCite').innerHTML = (o.sources || []).length
-    ? 'Sources: ' + o.sources.map(esc).join(' · ') : '';
+    ? 'Sources: ' + o.sources.map(s => {
+        const pin = o.pins && o.pins[s];
+        return pin ? `${esc(s)} <span class="pin">${esc(pin)}</span>` : esc(s);
+      }).join(' · ')
+    : '';
   $('#info').classList.remove('hidden');
 }
 

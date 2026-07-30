@@ -452,6 +452,11 @@ def build_events_js():
             "facts": date_facts,
             "text": e["text"], "accounts": e["accounts"],
             "sources": e["sources"], "track": e["track"],
+            # B2-b: where the claim actually lives in the work, when it is
+            # locatable to a chapter/book/folio. Absent means the date comes
+            # from the modern chronologies synthesising several accounts, and
+            # there is no single passage to point at — not that it was missed.
+            "pins": e.get("pins") or None,
         })
     return evs
 
@@ -552,6 +557,30 @@ ENTITY_IMAGE = {"cholula-massacre": "lienzo-cholula", "tlaxcala-alliance": "lien
 # In-app update log — written for a reader, not a changelog: the effect first,
 # the number as evidence. Rendered in the About panel.
 UPDATES = [
+    {"version": "2.6", "date": "30 July 2026",
+     "title": "Where each claim actually comes from",
+     "summary": "The events of the dated spine now show you the passage, not "
+                "just the book — Bernal Díaz by chapter, the Florentine Codex "
+                "by book and chapter, Cortés by letter. And zooming between "
+                "map levels no longer softens the landscape on the way.",
+     "items": [
+         "Fifty-three citations pinned across the twenty-five events the war's "
+         "chronology rests on. Open the Noche Triste and the sources line now "
+         "reads: Cortés, Second Letter, the retreat from the city · Bernal Díaz "
+         "cap. 128 · Florentine Codex Bk XII, ch. 24 · Anales de Tlatelolco f. 36.",
+         "Deliberately not page numbers. A page belongs to one printing, and "
+         "this model does not have those printings in hand — a page number here "
+         "would look checkable while being unverifiable, which is worse than "
+         "naming the book. Chapters and folios are carried by the works "
+         "themselves and survive every edition.",
+         "A source shown without a passage is not an omission. It means the "
+         "date comes from modern chronologies reconciling several accounts, and "
+         "there is no single place to point at.",
+         "Zooming between map levels used to soften the terrain briefly: two "
+         "renderings of the same mountains were being averaged half-and-half "
+         "on the way through. The fade now crosses that point about four times "
+         "faster, so the landscape holds its detail while the camera moves.",
+     ]},
     {"version": "2.5", "date": "30 July 2026",
      "title": "Forty people, and the pictures that were missing",
      "summary": "The cast now runs from 1502 rather than starting at the "

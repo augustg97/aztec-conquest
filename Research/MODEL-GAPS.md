@@ -58,7 +58,7 @@ mechanisms, and added people/events/goods depth.*
 | B1 | P1 | Altepetl gazetteer, first tranche | `gazetteer.py` | **DELIVERED** — 75 polities, 30 of ~38 Mendoza provinces, endonym/exonym/modern, coords + entry + confidence per row |
 | B1-b | P2 | The remaining Mendoza roster: ~9 poorly-located frontier provinces (named in gazetteer.py docstring) + the ~400 tribute towns below province level | `gazetteer.py` | **CLOSED round 7** for the provinces (82 polities, 37 of ~38); the ~400 sub-province towns stay out of scope by SCOPE §9 |
 | B2 | P1 | Allegiance state machine | `allegiance.py` | **DELIVERED** — 75 timelines, 228 transitions, all legal; selftest asserts the coalition shape (mid-siege: 27 allied + 12 occupied vs 3 contested + 0 core) |
-| B2-b | P3 | Page/folio-level citation pinning for event dates and force claims (currently source families + modern chronologies [TH][HAS]) | `events.py`, `forces.py` | open |
+| B2-b | P3 | Page/folio-level citation pinning for event dates and force claims (currently source families + modern chronologies [TH][HAS]) | `events.py`, `forces.py` | **CLOSED round 9** — 53 citations pinned to stable work divisions; pages deliberately refused |
 | B2-c | P4 | Mexica counter-diplomacy reversions (towns briefly regained 1520-21) — deliberately excluded from round 1 | `allegiance.py` | **IMPLEMENTED round 7** — reversion transitions added; Chalco runs the full cycle |
 | B2-d | P2 | Events catalogue: 64 events vs SCOPE's ~90 target; people cards (~40) not yet authored | `events.py`, `people.py` | **CLOSED round 8** — events 90, people **40** |
 
@@ -218,9 +218,28 @@ re-litigate):
   gate; the fix was to stop mutating the live emitter at all and **inject the mapping** instead.
 - Chimalpahin was rejected again on the same rule as round 7 (born 1579, outside the window).
 
-**Count: 3 open items — 0 at P1.**
+**Round 9 — the last two items I can reach:**
 
-1. **A2-b-rest** consult González Aparicio (1973) in facsimile and trace properly (no
-   licence-safe digital scan surfaced; likely a library visit). **Cannot be done from here.**
-2. **B2-b** page/folio-level citation pinning for event dates and force claims.
-3. Polish: basin/meso zoom seam.
+| # | outcome |
+|---|---|
+| **B2-b** | **CLOSED, but NOT as asked — and the difference is the point.** The register said "page/folio-level". Page numbers belong to a *printing*, and this model does not have those printings in hand; inventing them would be fabricated precision that **looks** checkable, which is worse than the source-family citation it replaced. So the pin is to the division the WORK carries and every edition preserves: Bernal Díaz by chapter, the Florentine Codex by book+chapter, Cortés by letter and section, codices by folio. **53 citations across the 25 events of the dated spine.** Two guards: a pin naming an event or a source that does not exist raises at import (it caught 5 of my own errors immediately), and the selftest **rejects any page reference** outright, so one cannot be smuggled in later. An event with no pin is not an oversight — its date comes from the modern chronologies synthesising several accounts, and the code says so |
+| Zoom seam | **APPLIED, and smaller than reported.** The levels stack, so mid-fade the screen shows `0.5*coarse + 0.5*fine`; their hillshades correlate r=0.89 and r=0.95, so averaging dilutes rather than blends. Easing the ramp hard through the middle (alpha in 0.3-0.7 for **11% of the band instead of 40%**) lifts mean detail across the band from **92.9% → 97.4%** (meso→corridor) and **92.5% → 95.3%** (corridor→basin). The worst case is unchanged at ~90%: the 50/50 point is crossed either way |
+
+**Honest corrections recorded this round:**
+
+- **I measured the wrong layer first.** The initial reading put the crossfade's detail loss at
+  **47.8%**, by comparing the basin raster against **meso**. But by the time basin fades in,
+  *corridor* is already fully opaque — and corridor carries 93.7% of basin's detail, so the real
+  dip is about 10%. The fix was still worth making; the claim was 5× too large. Measure against
+  what is actually on screen underneath, not against the layer that shares the name of the seam.
+- **The Browser pane was not compositing this round** (canvas width 0, screenshots time out), so
+  the seam and the citation line were verified through measured raster simulation and through
+  the DOM + computed style respectively — **not** by looking at a picture. That is a weaker
+  instrument than this project's standing rule wants, and it is recorded as such rather than
+  quietly skipped.
+
+**Count: 1 open item — 0 at P1.**
+
+1. **A2-b-rest** consult González Aparicio (1973) in facsimile and trace properly. No
+   licence-safe digital scan has surfaced across four rounds of looking; this needs a library
+   visit and **cannot be done from a terminal**. Everything else in the register is closed.

@@ -12,9 +12,15 @@ States: see allegiance.py STATES.
 
 Dates are Julian (the canonical frame). The event-date chronology follows the
 standard modern reconstructions [TH][HAS]; where the primary accounts disagree
-on the date itself, the precision is dropped and the note says so. Page-level
-pinning of each date to chapter/folio is register item B2-b (P3) — the source
-FAMILIES named here are correct, the folio numbers are not yet pinned.
+on the date itself, the precision is dropped and the note says so.
+
+CITATION PINNING (register B2-b, round 8): 25 events — the dated spine of the
+war — carry a `pins` map locating each claim in the division the WORK itself
+carries (Bernal Díaz by chapter, the Florentine Codex by book and chapter,
+Cortés by letter and section, folios where the source is a codex). Deliberately
+NOT page numbers: pages belong to a printing this model does not have in hand,
+and inventing them would be fabricated precision that LOOKS checkable. See
+PINS below; the selftest enforces the shape and rejects any page reference.
 
 Source keys:
   [C2]/[C3] Cortés, Segunda/Tercera carta de relación (1520/1522)
@@ -56,6 +62,78 @@ def E(eid, y, m, d, precision, kind, name, place, text, conf, sources,
             "effects": list(effects), "accounts": list(accounts),
             "latlon": latlon, "track": track,
             "t": t_of_julian(y, m, d), "jdn": jdn_of_julian(y, m, d)}
+
+
+# ---------------------------------------------------------------------------
+# B2-b: citation pinning — at the resolution that is actually verifiable
+# ---------------------------------------------------------------------------
+# The register asked for "page/folio-level" pinning. PAGE numbers are a trap:
+# they belong to a particular printing, and this model does not have those
+# printings in hand. Inventing them would be exactly the fabricated precision
+# the working rules forbid, and would be worse than the source-family citation
+# it replaced, because it would LOOK checkable while being unverifiable.
+#
+# So the pin is to the division the work itself carries, which is stable across
+# every edition and translation:
+#
+#   [C2]/[C3]  the letter, and its narrative section       "Second Letter"
+#   [BD]       Historia verdadera CHAPTER (cap.)           "cap. 88"
+#   [FC]       Florentine Codex BOOK and CHAPTER           "Bk XII, ch. 20"
+#   [DUR]      Historia de las Indias chapter              "cap. 75"
+#   [AT]       Anales de Tlatelolco folio                  "f. 33"
+#   [CM]       Codex Mendoza folio                         "fol. 2r"
+#
+# PINS carries only the events whose dating actually rests on a locatable
+# passage. An event with no entry is not "unpinned by oversight" — it is one
+# whose date comes from the modern chronologies [TH]/[HAS] synthesising several
+# accounts, and there is no single passage to point at. _selftest enforces the
+# shape of every pin, so a page number cannot be smuggled in later.
+PINS = {
+    "ulua-landing":         {"[BD]": "cap. 36-40"},
+    "villa-rica-founded":   {"[C2]": "Second Letter, the founding of Villa Rica de la Vera Cruz",
+                             "[BD]": "cap. 41-42"},
+    "tlaxcala-battles":     {"[C2]": "Second Letter, the fighting in Tlaxcala",
+                             "[BD]": "cap. 62-69"},
+    "tlaxcala-alliance":    {"[C2]": "Second Letter, the peace with Tlaxcala",
+                             "[BD]": "cap. 70-77", "[MC]": "Historia de Tlaxcala, lib. I"},
+    "cholula-massacre":     {"[C2]": "Second Letter, the affair at Cholula",
+                             "[BD]": "cap. 83", "[FC]": "Bk XII, ch. 11"},
+    "entry-tenochtitlan":   {"[C2]": "Second Letter, the entry of 8 November",
+                             "[BD]": "cap. 87-88", "[FC]": "Bk XII, ch. 15-16"},
+    "moctezuma-seized":     {"[C2]": "Second Letter, the seizure of Moctezuma",
+                             "[BD]": "cap. 95", "[FC]": "Bk XII, ch. 17"},
+    "cempoala-narvaez":     {"[C2]": "Second Letter, the defeat of Narváez",
+                             "[BD]": "cap. 122-123"},
+    "toxcatl":              {"[FC]": "Bk XII, ch. 20 — the fullest account, from Tlatelolca witnesses",
+                             "[BD]": "cap. 125", "[DUR]": "cap. 75"},
+    "moctezuma-dies":       {"[C2]": "Second Letter, the death of Moctezuma",
+                             "[BD]": "cap. 126", "[FC]": "Bk XII, ch. 23"},
+    "noche-triste":         {"[C2]": "Second Letter, the retreat from the city",
+                             "[BD]": "cap. 128", "[FC]": "Bk XII, ch. 24",
+                             "[AT]": "f. 36"},
+    "otumba":               {"[C2]": "Second Letter, the battle on the plain",
+                             "[BD]": "cap. 128"},
+    "tepeaca-campaign":     {"[C2]": "Second Letter, the Tepeaca campaign",
+                             "[BD]": "cap. 130-135"},
+    "smallpox-basin":       {"[FC]": "Bk XII, ch. 29 — the huey zahuatl"},
+    "texcoco-taken":        {"[C3]": "Third Letter, the occupation of Texcoco",
+                             "[IXT]": "Historia de la nación chichimeca, cap. 88-90"},
+    "chalco-defects":       {"[C3]": "Third Letter, the Chalca embassies"},
+    "chalco-counterattacks":{"[C3]": "Third Letter, the relief of Chalco"},
+    "chalco-relieved":      {"[C3]": "Third Letter, Sandoval's second march to Chalco"},
+    "brigantines-launched": {"[C3]": "Third Letter, the launching of the brigantines",
+                             "[BD]": "cap. 150"},
+    "siege-camps":          {"[C3]": "Third Letter, the disposition of the three camps",
+                             "[BD]": "cap. 150-151"},
+    "aqueduct-cut":         {"[C3]": "Third Letter, the cutting of the Chapultepec water"},
+    "tlatelolco-ambush":    {"[C3]": "Third Letter, the reverse on the causeway",
+                             "[BD]": "cap. 152", "[FC]": "Bk XII, ch. 34"},
+    "fall-tenochtitlan":    {"[C3]": "Third Letter, the taking of Cuauhtémoc",
+                             "[BD]": "cap. 156", "[FC]": "Bk XII, ch. 40-41",
+                             "[AT]": "f. 39"},
+    "cuauhtemoc-executed":  {"[BD]": "cap. 177"},
+    "codex-mendoza-made":   {"[CM] Berdan & Anawalt (1992)": "fol. 1r-71v — the tribute roll itself"},
+}
 
 
 EVENTS = [
@@ -979,7 +1057,40 @@ for _e in EVENTS:
 BY_ID = {e["id"]: e for e in EVENTS}
 
 
+# Attach the pins, and refuse to carry one that does not correspond to a real
+# event citing that real source — a citation pointing at nothing is worse than
+# no citation, because it looks checked.
+_by_id = {e["id"]: e for e in EVENTS}
+for _eid, _pins in PINS.items():
+    if _eid not in _by_id:
+        raise ValueError(f"PINS names an event that does not exist: {_eid}")
+    _ev = _by_id[_eid]
+    for _key in _pins:
+        if _key not in _ev["sources"]:
+            raise ValueError(f"PINS[{_eid}] pins {_key}, but that event does not cite it "
+                             f"(it cites {_ev['sources']})")
+    _ev["pins"] = dict(_pins)
+
+
 def _selftest():
+    # B2-b: every pin must name a division the WORK carries (chapter, book+
+    # chapter, folio, or a named letter section) — never a page, which belongs
+    # to a printing this model does not have in hand. A bare number, or the
+    # words "p."/"pp."/"page", is fabricated precision and fails here.
+    import re as _re
+    _ok = _re.compile(r"^(cap\.\s*\d|Bk\s+[IVXL]+,\s*ch\.\s*\d|f(ol)?\.\s*\d|"
+                      r"(First|Second|Third|Fourth|Fifth)\s+Letter|Historia\s)", _re.I)
+    _bad_page = _re.compile(r"\bp{1,2}\.\s*\d|\bpage\b", _re.I)
+    npins = 0
+    for e in EVENTS:
+        for key, ref in (e.get("pins") or {}).items():
+            npins += 1
+            assert not _bad_page.search(ref), \
+                f"{e['id']}/{key}: '{ref}' pins a PAGE — pages belong to a printing, not a work"
+            assert _ok.match(ref.strip()), \
+                f"{e['id']}/{key}: '{ref}' is not a stable work division"
+    assert npins >= 40, f"only {npins} pins — B2-b claims more than it delivers"
+
     import gazetteer
 
     ids = [e["id"] for e in EVENTS]

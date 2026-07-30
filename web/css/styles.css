@@ -219,3 +219,6 @@ input[type=range]{width:88px;accent-color:var(--accent)}
   background:rgba(232,236,242,.35)}
 .tslab{position:absolute;top:1px;transform:translateX(-50%);font-size:9px;
   color:var(--faint);letter-spacing:.04em;white-space:nowrap}
+
+/* B2-b: the pinned passage, shown against the source it belongs to */
+.pin{opacity:.62;font-style:italic;white-space:nowrap}
