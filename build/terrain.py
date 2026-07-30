@@ -160,9 +160,12 @@ LAND = {
             (3900, (110, 116, 106)), (4400, (152, 156, 158)), (4750, (230, 234, 238)),
             (5700, (246, 248, 252))],
 }
-OCEAN = [(-6500, (14, 30, 52)), (-3500, (18, 40, 66)), (-1500, (28, 56, 88)),
-         (-400, (40, 76, 108)), (-120, (58, 104, 132)), (-25, (92, 142, 156)),
-         (0, (118, 160, 164))]
+# Hypsometric ocean, with the shelf break where it belongs. The stops crowd
+# between -200 and 0 m because that is where the shelf is and where the eye
+# reads the coast; a linear ramp spends its range on abyss nobody looks at.
+OCEAN = [(-6500, (9, 20, 44)), (-4500, (13, 30, 60)), (-3000, (18, 42, 78)),
+         (-1500, (26, 60, 100)), (-600, (36, 84, 122)), (-200, (54, 118, 146)),
+         (-80, (84, 156, 166)), (-25, (126, 190, 184)), (0, (160, 210, 194))]
 
 
 def render(view):
@@ -200,7 +203,11 @@ def render(view):
         col = col * (1 - rock * 0.45) + np.array([124, 118, 108], np.float32) * rock * 0.45
         oce = _lut(OCEAN, np.clip(E, -6500, 0))
         shade_l = (0.40 + 0.72 * hs2)[..., None]
-        shade_o = (0.82 + 0.25 * hs)[..., None]
+        # The sea floor is REAL DATA and deserves the same light the land gets.
+        # At 0.82 + 0.25*hs the ETOPO relief — ridges, trenches, the shelf edge,
+        # seamounts — was flattened almost out of existence; the reference's
+        # "fabric" is exactly that relief, shaded hard.
+        shade_o = (0.52 + 0.80 * hs)[..., None]
         img = np.where(land[..., None], col * shade_l, oce * shade_o)
         # shoreline glint: thin bright line where |E| is tiny
         shore = (np.abs(E) < 6)[..., None]

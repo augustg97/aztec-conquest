@@ -669,10 +669,10 @@ const DEPTH_STOPS = [
   [0.22, 26, 62, 112, 1.00],
   [0.42, 40, 92, 145, 0.99],
   [0.55, 62, 126, 172, 0.97],    // the break
-  [0.68, 96, 164, 190, 0.92],
-  [0.82, 132, 192, 202, 0.84],   // the shoal
-  [0.93, 168, 212, 210, 0.72],
-  [1.00, 196, 226, 218, 0.55],   // the waterline, where the bed shows through
+  [0.68, 88, 168, 186, 0.92],
+  [0.82, 122, 196, 196, 0.84],   // the shoal turns turquoise, as shallows do
+  [0.93, 158, 216, 204, 0.72],
+  [1.00, 190, 228, 212, 0.55],   // the waterline, where the bed shows through
 ];
 
 function depthColour(k, wet) {
@@ -814,16 +814,24 @@ function drawLakes(wet) {
   if (state.cam.span < 3.0 && D.geo.rivers) {
     for (const r of D.geo.rivers) {
       const n = r.points.length;
-      for (let i = 0; i < n - 1; i++) {
-        const [ax, ay] = project(r.points[i][0], r.points[i][1]);
-        const [bx, by] = project(r.points[i + 1][0], r.points[i + 1][1]);
-        const grow = (i + 1) / (n - 1);
-        ctx.beginPath();
-        ctx.moveTo(ax, ay); ctx.lineTo(bx, by);
-        ctx.lineCap = 'round';
-        ctx.lineWidth = Math.max(0.8, (0.00006 + 0.00016 * grow) * PROJ.s);
-        ctx.strokeStyle = `rgba(96,150,186,${(0.5 + 0.35 * grow).toFixed(2)})`;
-        ctx.stroke();
+      // a river cuts a valley: the shaded incision first, then the water in it
+      for (let pass = 0; pass < 2; pass++) {
+        for (let i = 0; i < n - 1; i++) {
+          const [ax, ay] = project(r.points[i][0], r.points[i][1]);
+          const [bx, by] = project(r.points[i + 1][0], r.points[i + 1][1]);
+          const grow = (i + 1) / (n - 1);
+          ctx.beginPath();
+          ctx.moveTo(ax, ay); ctx.lineTo(bx, by);
+          ctx.lineCap = 'round';
+          if (pass === 0) {                        // the cut bank, sun from NW
+            ctx.lineWidth = Math.max(1.6, (0.00016 + 0.00030 * grow) * PROJ.s);
+            ctx.strokeStyle = 'rgba(46,52,38,.30)';
+          } else {
+            ctx.lineWidth = Math.max(0.8, (0.00006 + 0.00016 * grow) * PROJ.s);
+            ctx.strokeStyle = `rgba(96,158,190,${(0.55 + 0.35 * grow).toFixed(2)})`;
+          }
+          ctx.stroke();
+        }
       }
       const m = r.points[n - 1], p0 = r.points[n - 2];
       const [mx, my] = project(m[0], m[1]);
