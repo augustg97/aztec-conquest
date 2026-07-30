@@ -241,7 +241,10 @@ function sampleTerrain(id, img) {
  * OLD picture — the same silent staleness the deploy rules warn about, and it
  * cost a full diagnosis loop when a fixed ocean still looked broken on screen
  * while the file on disk was already correct. */
-const DV = (window.DATA && DATA.meta && DATA.meta.dataVersion) || 'dev';
+// In production this is the build's stamp. In DEV there is no stamp, and a
+// constant 'dev' pinned the stale entry forever — a cache-buster that busted
+// nothing, which cost another cycle. Dev gets a per-load value instead.
+const DV = (window.DATA && DATA.meta && DATA.meta.dataVersion) || ('dev-' + Date.now());
 const bust = url => url + (url.indexOf('?') < 0 ? '?dv=' : '&dv=') + DV;
 
 function preloadTerrain() {

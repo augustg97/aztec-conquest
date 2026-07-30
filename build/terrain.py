@@ -182,8 +182,10 @@ def render(view):
     # flag; those pixels take their depth from the z9 mosaic, which does carry
     # ETOPO. Measured and reported rather than patched by eye.
     nod = (E == 0.0)
+    nod_mask = None
     frac = float(np.mean(nod))
     if frac > 0.001:
+        nod_mask = nod
         Ez9, _ = sample_equirect(view, zoom=min(9, VIEWS[view][4]))
         # The z9 grid is ~4x coarser than the level it is filling, so pasted
         # raw it draws a staircase of terraces that reads as sea-floor
@@ -223,7 +225,12 @@ def render(view):
     curv = np.clip(lap * 6.0 * native_gain, -0.22, 0.22)
     hs2 = np.clip(hs + curv, 0, 1.15)
     rock = np.clip((slope - math.radians(28)) / math.radians(18), 0, 1)[..., None]
-    land = E >= 0
+    # THE COASTLINE COMES FROM THE FINE GRID, THE DEPTHS FROM THE COARSE ONE.
+    # SRTM's no-data mask marks water at this level's own resolution, so it
+    # draws the shore sharply; the z9 backfill only supplies how deep the
+    # water is. Deciding land/sea from the backfilled values instead put the
+    # coastline on the 4x-coarser grid and stepped it.
+    land = (E >= 0) if nod_mask is None else (~nod_mask & (E >= 0))
     outs = {}
     for season in SEASONS:
         col = _lut(LAND[season], np.clip(E, 0, 5700))
@@ -236,9 +243,12 @@ def render(view):
         # "fabric" is exactly that relief, shaded hard.
         shade_o = (0.52 + 0.80 * hs)[..., None]
         img = np.where(land[..., None], col * shade_l, oce * shade_o)
-        # shoreline glint: thin bright line where |E| is tiny
-        shore = (np.abs(E) < 6)[..., None]
-        img = np.where(shore & ~land[..., None], img * 1.25 + 18, img)
+        # NO shoreline glint. A brightened band at |E| < 6 m looked like surf
+        # on a fine grid, but where the field is smooth or backfilled the 6 m
+        # threshold wanders pixel to pixel and JPEG then renders it as a
+        # dithered checkerboard along the whole coast — an artifact reading as
+        # structure, the same class as the curvature staircase. The hypsometric
+        # ramp already pales toward the waterline, which is the real effect.
         outs[season] = np.clip(img, 0, 255).astype(np.uint8)
     return E, outs
 
@@ -269,7 +279,12 @@ def main():
             print(f"  meso checks: Gulf {gulf:.0f} m, Campeche shelf {shelf:.0f} m")
         for season, img in outs.items():
             p = os.path.join(OUT, f"terrain-{view}-{season}.jpg")
-            Image.fromarray(img).save(p, quality=84, optimize=True)
+            # subsampling=0 (4:4:4). The default 4:2:0 halves colour
+            # resolution, and at the land/sea edge — a hard hue step — that
+            # renders as an 8x8 chroma staircase along every coastline, which
+            # reads as a jagged shore rather than as compression. Measured at
+            # ~700 m per step in the corridor render.
+            Image.fromarray(img).save(p, quality=88, optimize=True, subsampling=0)
             kb = os.path.getsize(p) / 1024
             total += kb
             print(f"  wrote {os.path.basename(p):24} {img.shape[1]}x{img.shape[0]}  {kb:6.0f} KB")
