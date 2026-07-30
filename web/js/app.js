@@ -702,15 +702,22 @@ function crinkled(id, pts, amp) {
 /* The depth ramp. k: 0 = deep, 1 = the waterline. Deliberately NOT linear —
  * the plateau from the shore out, then a steepening, is what reads as a shelf
  * break; a straight interpolation reads as a gradient and nothing else. */
+/* THE LAKES ARE SHALLOW. Texcoco ran a metre to three deep over most of its
+ * area — the brigantines drew little and the causeway builders waded. So its
+ * ramp must live in the SHALLOW end of the palette: teal throughout, never
+ * the navy of an ocean basin. The earlier ramp reached rgb(18,44,88) at the
+ * middle, which drew a 3 m lake as abyss — accurate-looking water that was
+ * wrong about the water. Depth still reads, because the ramp still runs; it
+ * just runs across the range the lake actually occupied. */
 const DEPTH_STOPS = [
-  [0.00, 18, 44, 88, 1.00],      // the deep middle
-  [0.22, 26, 62, 112, 1.00],
-  [0.42, 40, 92, 145, 0.99],
-  [0.55, 62, 126, 172, 0.97],    // the break
-  [0.68, 88, 168, 186, 0.92],
-  [0.82, 122, 196, 196, 0.84],   // the shoal turns turquoise, as shallows do
-  [0.93, 158, 216, 204, 0.72],
-  [1.00, 190, 228, 212, 0.55],   // the waterline, where the bed shows through
+  [0.00, 44, 104, 132, 1.00],    // the deeper middle — still only metres
+  [0.22, 52, 118, 146, 1.00],
+  [0.42, 64, 138, 162, 0.99],
+  [0.55, 82, 158, 174, 0.97],    // the shoal edge
+  [0.68, 108, 180, 184, 0.92],
+  [0.82, 138, 200, 194, 0.84],
+  [0.93, 168, 216, 202, 0.72],
+  [1.00, 196, 228, 210, 0.55],   // the waterline, where the bed shows through
 ];
 
 function depthColour(k, wet) {
@@ -798,7 +805,8 @@ function drawLakes(wet) {
     // middle, a matter of a couple of metres but the sharpest gradient there).
     ctx.fillStyle = deepColour(wet);
     ctx.fill();
-    const shelf = Math.max(5, 0.0125 * PROJ.s);
+    // a shallow lake is nearly all shelf: the pale margin reaches far in
+    const shelf = Math.max(6, 0.030 * PROJ.s);
     const N = 26;
     for (let i = 0; i < N; i++) {
       const k = i / N;                             // 0 = deepest pass, 1 = shore
