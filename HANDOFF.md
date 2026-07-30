@@ -16,24 +16,38 @@ that pulled the Mexica empire apart.
 
 ## State right now
 
-Kickoff → v1.0 → v1.1 → v2.0 → v2.1 → v2.2 → round 6 (the rendering loop) → v2.3 →
-**round 7 (the water loop, then the register) → v2.4** are complete.
+Kickoff → v1.0 → v1.1 → v2.0 → v2.1 → v2.2 → round 6 (rendering) → v2.3 →
+round 7 (water + register) → v2.4 → round 8 (people, images, audits) → v2.5 →
+**round 9 (citations, crossfade) → v2.6** are complete.
 
-**Round 7** finished the user's lake work and then went through the register itself. Closed
-**A2-c** (the four chinampa districts, *derived* from the shoreline rather than drawn — the
-selftest asserts every vertex lies in the lake) and **B1-b** (82 polities, 37 of ~38 Mendoza
-provinces). **Implemented B2-c** rather than closing it negative: excluding reversions had made
-the allegiance machine monotone — every defection permanent, holding ground free — and Chalco
-now runs tributary → coalition → *contested* → coalition → new-spain. **B2-d** advanced 18 → 30
-people, correcting a bias in the first cast (three Mexica lords against six Spaniards, which
-quietly argued against this model's own thesis). SCOPE §10's byte budget was amended 25 → 45 MB
-with the reasoning recorded. See MODEL-GAPS "Round 7" for the APPLIED table and the eight
-honest corrections — including a per-plot draw that cost 9.6 ms/frame until it was batched by
-crop colour (0.16 ms), and the **third** appearance of the stale-dev-JS trap, where two
-screenshots came back pixel-identical after real edits.
+**THE REGISTER IS CLOSED except for one item that cannot be done from a
+terminal.** Rounds 7-9 worked through everything else: the chinampa districts
+(derived from the shoreline, selftest-asserted to lie in the lake), the Mendoza
+frontier provinces (82 polities, 37 of ~38), allegiance reversions (Chalco runs
+tributary → coalition → contested → coalition), people 18 → **40**, all five
+image negatives cleared plus the missing chapter image (**16/16 licence-safe
+and subject-verified, all 10 chapters illustrated**), and **53 pinned
+citations** across the dated spine.
 
-**Four items remain open, none at P1**, and one of them (A2-b-rest, the González Aparicio
-facsimile) cannot be done from a terminal — it needs a library visit. Round 6 rebuilt the visual layer: a **canvas world layer** under the SVG carries
+Three things a future session should inherit rather than rediscover:
+
+1. **Pin to the work, not the printing.** B2-b asked for page numbers; pages
+   belong to an edition this model does not hold, so the pins are chapters,
+   book+chapter, folios and letter sections. The selftest *rejects* any page
+   reference. Do not "improve" this by adding page numbers.
+2. **Measure against what is actually on screen.** The round-9 crossfade dip
+   was first reported at 47.8% because it was measured against the meso layer,
+   which is not the visible base there. The real figure is ~10%. Same class of
+   error as the round-6 vegetation bugs: right instrument, wrong reference.
+3. **The stale-dev-JS trap has now appeared four times.** `web/js/app.js`
+   carries no cache-buster in dev, so a screenshot can come back
+   pixel-identical after a real edit. Read a value or a function's source back
+   through the console before believing a null result.
+
+**One item remains open, at P2:** **A2-b-rest** — consult González Aparicio
+(1973) in facsimile and trace the lake properly with pixel control points. No
+licence-safe digital scan has surfaced across four rounds of looking. This
+needs a library visit and cannot be done from here.
 terrain, lakes and a full procedural urban fabric (blocks, courtyard compounds, canals,
 jetties, precinct architecture, colonial traza), every altepetl draws its own town on its own
 plan, the siege is legible on the ground, and landscape detail is grown from the measured
