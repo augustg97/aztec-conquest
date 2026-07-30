@@ -14,6 +14,11 @@
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
   font-size:13px;line-height:1.5;overflow:hidden;-webkit-font-smoothing:antialiased}
+/* Dragging the map must not sweep a text selection across the chrome. Chrome
+   is unselectable; the card and About body opt back in, because a reader
+   copying a source line is a thing worth keeping. */
+body{-webkit-user-select:none;user-select:none}
+#infoDesc,#infoRows,#infoCite,#aboutBody,#infoName{-webkit-user-select:text;user-select:text}
 
 #stage{position:fixed;inset:0}
 /* The raster world (terrain, lakes, urban fabric) is a canvas; the SVG above

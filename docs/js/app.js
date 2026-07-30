@@ -320,18 +320,8 @@ function drawWorld() {
     ctx.globalAlpha = 1;
   }
 
-  if (state.layers.water) {
-    for (const f of D.geo.features) {
-      if (f.kind !== 'lake') continue;
-      cpath(f.points, true);
-      ctx.fillStyle = `rgba(96,150,196,${(0.34 + 0.14 * wet).toFixed(3)})`;
-      ctx.fill();
-      ctx.strokeStyle = `rgba(130,180,220,${(0.5 + 0.2 * wet).toFixed(3)})`;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-  }
-  drawGroundDetail();
+  drawGroundDetail();                              // grain + vegetation on land
+  if (state.layers.water) drawLakes(wet);
   if (state.layers.city) {
     drawSettlements();
     drawCityFabric();
@@ -623,6 +613,142 @@ function drawSettlement(e, cx, cy, R, Rpx, st, phase) {
     if (lod >= 1) {                                  // the bell tower's shadow
       ctx.fillStyle = 'rgba(214,204,186,1)';
       ctx.fillRect(cx - cw / 2, cy - ch * 1.55, cw * 0.26, ch * 0.4);
+    }
+  }
+}
+
+// ------------------------------------------------------------- the water --
+/* Real lakes, not blue polygons. Three things make water read as water:
+ *   depth — shallow, pale margins darkening to the middle. Drawn by clipping
+ *     to the lake and stroking its own boundary in narrowing passes, so the
+ *     shallow band follows the true shoreline shape rather than a centroid;
+ *   a coastline that is not a straight line between vertices — the drawn
+ *     shore is fractally displaced (≤ ~120 m) off the reconstruction's
+ *     polygon. THIS IS A RENDERING, not a new claim: the canonical shoreline
+ *     stays the named reconstruction's, which is what the witness audit
+ *     measures and what every card cites;
+ *   surface — ripple, and a sun sheen from the NW to match the terrain's own
+ *     light, so the lake belongs to the same world as the ground.
+ * The Basin's rivers run in from the sierra and fan into deltas at the
+ * margin — a closed basin's streams had nowhere else to go, which is why the
+ * lakes existed and why the flood problem never did go away. */
+const COAST_CACHE = {};
+
+function crinkled(id, pts, amp) {
+  if (COAST_CACHE[id]) return COAST_CACHE[id];
+  const out = [];
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const L = Math.hypot(dx, dy) || 1;
+    const nx = -dy / L, ny = dx / L;
+    // sinuosity scales with the edge it replaces: a long straight run in the
+    // simplified reconstruction is exactly where a real shore wanders most
+    const per = Math.max(8, Math.min(40, Math.round(L / 0.0022)));
+    const scale = amp * Math.min(1.6, 0.5 + L / 0.05);
+    for (let k = 0; k < per; k++) {
+      const u = k / per;
+      const x = a[0] + dx * u, y = a[1] + dy * u;
+      // taper to zero at the vertices, so the reconstruction's own corners hold
+      const taper = Math.sin(Math.PI * u);
+      const d = (smoothNoise(x, y, 0.016) - 0.5) * 1.0
+              + (smoothNoise(x, y, 0.006) - 0.5) * 0.6
+              + (smoothNoise(x, y, 0.0022) - 0.5) * 0.32;
+      out.push([x + nx * d * scale * taper, y + ny * d * scale * taper]);
+    }
+  }
+  COAST_CACHE[id] = out;
+  return out;
+}
+
+function drawLakes(wet) {
+  const zoomed = state.cam.span < 3.0;
+  for (const f of D.geo.features) {
+    if (f.kind !== 'lake') continue;
+    const pts = zoomed ? crinkled(f.id, f.points, 0.0032) : f.points;
+    ctx.save();
+    cpath(pts, true);
+    ctx.clip();
+    // deep water first
+    ctx.fillStyle = `rgba(48,92,134,${(0.60 + 0.10 * wet).toFixed(3)})`;
+    ctx.fill();
+    // then the shallows, banded inward from the true shoreline. Texcoco was a
+    // metre or three deep over most of its area, so the shelf is broad and the
+    // falloff gentle — many light passes, not a few hard ones.
+    const shelf = Math.max(4, 0.0075 * PROJ.s);
+    for (let i = 0; i < 14; i++) {
+      const k = i / 14;
+      cpath(pts, true);
+      ctx.lineWidth = shelf * Math.pow(1 - k, 1.5) * 2;
+      ctx.strokeStyle = `rgba(${96 + k * 62},${152 + k * 46},${182 + k * 38},` +
+                        `${(0.10 + k * 0.13).toFixed(3)})`;
+      ctx.stroke();
+    }
+    if (zoomed) {
+      // ripple, world-anchored so it does not swim
+      ctx.strokeStyle = 'rgba(226,240,250,.07)';
+      ctx.lineWidth = Math.max(0.5, 0.00004 * PROJ.s);
+      const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+      const lo0 = Math.min(...xs), lo1 = Math.max(...xs);
+      const la0 = Math.min(...ys), la1 = Math.max(...ys);
+      const stp = 0.00075;
+      ctx.beginPath();
+      for (let la = la0; la < la1; la += stp) {
+        for (let lo = lo0; lo < lo1; lo += stp * 3) {
+          const s = Math.round(lo * 1e5) * 61 + Math.round(la * 1e5);
+          if (rnd(s) > 0.45) continue;
+          const [wx, wy] = project(lo, la);
+          ctx.moveTo(wx, wy);
+          ctx.lineTo(wx + Math.max(1.4, stp * PROJ.s * 1.6), wy);
+        }
+      }
+      ctx.stroke();
+      // the sun's sheen, from the NW, matching the hillshade's own light
+      const [gx0, gy0] = project(lo0, la1);
+      const [gx1, gy1] = project(lo1, la0);
+      const gr = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
+      gr.addColorStop(0, 'rgba(255,252,238,.16)');
+      gr.addColorStop(0.28, 'rgba(255,250,235,.05)');
+      gr.addColorStop(0.6, 'rgba(255,255,255,0)');
+      ctx.fillStyle = gr;
+      ctx.fillRect(Math.min(gx0, gx1), Math.min(gy0, gy1),
+                   Math.abs(gx1 - gx0), Math.abs(gy1 - gy0));
+    }
+    ctx.restore();
+    // the water's edge itself: a pale line of shoal, then the shore
+    cpath(pts, true);
+    ctx.lineWidth = Math.max(0.7, 0.00005 * PROJ.s);
+    ctx.strokeStyle = `rgba(186,212,222,${(0.34 + 0.16 * wet).toFixed(3)})`;
+    ctx.stroke();
+  }
+  // the rivers, widening downstream, with a delta where they meet the lake
+  if (state.cam.span < 3.0 && D.geo.rivers) {
+    for (const r of D.geo.rivers) {
+      const n = r.points.length;
+      for (let i = 0; i < n - 1; i++) {
+        const [ax, ay] = project(r.points[i][0], r.points[i][1]);
+        const [bx, by] = project(r.points[i + 1][0], r.points[i + 1][1]);
+        const grow = (i + 1) / (n - 1);
+        ctx.beginPath();
+        ctx.moveTo(ax, ay); ctx.lineTo(bx, by);
+        ctx.lineCap = 'round';
+        ctx.lineWidth = Math.max(0.8, (0.00006 + 0.00016 * grow) * PROJ.s);
+        ctx.strokeStyle = `rgba(96,150,186,${(0.5 + 0.35 * grow).toFixed(2)})`;
+        ctx.stroke();
+      }
+      const m = r.points[n - 1], p0 = r.points[n - 2];
+      const [mx, my] = project(m[0], m[1]);
+      const dx = m[0] - p0[0], dy = m[1] - p0[1], L = Math.hypot(dx, dy) || 1;
+      for (let k = 0; k < 5; k++) {                // the delta's distributaries
+        const a = Math.atan2(-dy / L, dx / L) + (k - 2) * 0.26;
+        const len = (0.0016 + rnd(k + m[0] * 1e4) * 0.0016) * PROJ.s;
+        ctx.beginPath();
+        ctx.moveTo(mx, my);
+        ctx.lineTo(mx + Math.cos(a) * len, my - Math.sin(a) * len);
+        ctx.lineWidth = Math.max(0.5, 0.00005 * PROJ.s);
+        ctx.strokeStyle = 'rgba(120,168,196,.55)';
+        ctx.stroke();
+      }
     }
   }
 }
@@ -2259,9 +2385,12 @@ function wire() {
 
   let panStart = null, panned = false;
   svg.addEventListener('pointerdown', e => {
+    e.preventDefault();                    // no drag-select while panning
     panStart = {x: e.clientX, y: e.clientY, cx: state.cam.cx, cy: state.cam.cy};
     panned = false;
   });
+  svg.addEventListener('dragstart', e => e.preventDefault());
+  svg.addEventListener('selectstart', e => e.preventDefault());
   svg.addEventListener('pointermove', e => {
     if (!panStart || e.buttons === 0) return;
     const dx = e.clientX - panStart.x, dy = e.clientY - panStart.y;

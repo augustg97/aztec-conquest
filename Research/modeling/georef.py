@@ -441,6 +441,52 @@ CITY = {
     },
 }
 
+# ---------------------------------------------------------------------------
+# The Basin's rivers (round 7). AUTHORED courses at visualization grade from
+# the basin's documented hydrology — a closed basin whose sierra streams all
+# ran to the lakes, which is why the lakes existed at all and why the flood
+# problem never went away. Named where the name is secure; drawn from the
+# range front to the lake margin, with a delta where each meets the water.
+# Confidence 'moderate' on course, 'good' on existence and outfall.
+RIVERS = {
+    "rio-cuautitlan": {
+        "label": "Río Cuauhtitlan", "confidence": "moderate",
+        "note": "the basin's largest stream, from the northwest sierra to the north lakes",
+        "points": [(-99.42, 19.72), (-99.33, 19.71), (-99.24, 19.70), (-99.16, 19.72),
+                   (-99.09, 19.74)],
+    },
+    "rio-tepotzotlan": {
+        "label": "Río Tepotzotlán", "confidence": "moderate", "note": "joins the Cuauhtitlan",
+        "points": [(-99.34, 19.82), (-99.28, 19.77), (-99.24, 19.70)],
+    },
+    "rio-tlalnepantla": {
+        "label": "Río Tlalnepantla", "confidence": "moderate",
+        "note": "off the Sierra de las Cruces to the western lakeshore",
+        "points": [(-99.34, 19.58), (-99.27, 19.56), (-99.20, 19.545), (-99.155, 19.535)],
+    },
+    "rio-papalotla": {
+        "label": "Río Papalotla", "confidence": "moderate",
+        "note": "off the Sierra Nevada to Lake Tetzcohco",
+        "points": [(-98.74, 19.58), (-98.82, 19.565), (-98.88, 19.545), (-98.94, 19.525)],
+    },
+    "rio-texcoco": {
+        "label": "Río Tetzcohco", "confidence": "moderate",
+        "note": "past the Acolhua capital into the lake it names",
+        "points": [(-98.79, 19.50), (-98.85, 19.505), (-98.91, 19.50), (-98.965, 19.492)],
+    },
+    "rio-churubusco": {
+        "label": "Río Huitzilopochco (Churubusco)", "confidence": "moderate",
+        "note": "off the Ajusco to the southern lakeshore by Huitzilopochco",
+        "points": [(-99.26, 19.32), (-99.21, 19.335), (-99.17, 19.348), (-99.135, 19.357)],
+    },
+    "rio-amecameca": {
+        "label": "Río Amecameca", "confidence": "moderate",
+        "note": "off the volcanoes' snows to Lake Chālco — the freshwater the "
+                "chinampas of the south lived on",
+        "points": [(-98.74, 19.13), (-98.80, 19.18), (-98.86, 19.225), (-98.92, 19.25)],
+    },
+}
+
 CAMPAN_LABELS = [
     ("Cuepopan", 19.4425, -99.1395), ("Atzacoalco", 19.4425, -99.1240),
     ("Moyotlan", 19.4270, -99.1395), ("Teopan", 19.4270, -99.1240),
@@ -555,6 +601,24 @@ def _selftest():
     # the Paso de Cortés lies between the two volcanoes
     po, iz = PEAKS["popocatepetl"], PEAKS["iztaccihuatl"]
     assert abs((po[0] + iz[0]) / 2 - 19.101) < 0.02
+    # rivers: inside the Basin, and every one ends AT a lake (a closed basin's
+    # streams have nowhere else to go — that is why the lakes were there)
+    lakes = [g["points"] for g in GEOMETRY.values() if g["kind"] == "lake"]
+    for name, r in RIVERS.items():
+        assert r["confidence"] in CONFIDENCE and r["label"] and r["note"], name
+        assert len(r["points"]) >= 3, name
+        for lon, lat in r["points"]:
+            assert 19.0 <= lat <= 20.0 and -99.6 <= lon <= -98.6, f"{name}: {lon},{lat}"
+        mouth = r["points"][-1]
+        d = min(dist_to_polygon_km(mouth[1], mouth[0], p) for p in lakes)
+        inside = any(point_in_polygon(mouth[1], mouth[0], p) for p in lakes)
+        # a stream ends in a lake OR in another stream — the Tepotzotlán is a
+        # tributary of the Cuauhtitlan, not an independent outfall
+        trib = min([dist_km(mouth[1], mouth[0], q[1], q[0])
+                    for k2, r2 in RIVERS.items() if k2 != name for q in r2["points"]]
+                   or [99])
+        assert inside or d < 2.0 or trib < 1.0, \
+            f"{name}: mouth {d:.1f} km from a lake, {trib:.1f} km from another stream"
     # the city model: phases valid, geometry inside the island's neighbourhood,
     # and the precinct centred on the Templo Mayor anchor
     fp = GEOMETRY["city-footprint"]["points"]

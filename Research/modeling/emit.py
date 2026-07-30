@@ -845,6 +845,9 @@ def emit():
                   "points": g["points"]} for k, g in georef.CITY.items()],
         "campanLabels": [{"name": n, "lat": la, "lon": lo}
                          for n, la, lo in georef.CAMPAN_LABELS],
+        "rivers": [{"id": k, "label": g["label"], "confidence": g["confidence"],
+                    "note": g["note"], "points": g["points"]}
+                   for k, g in georef.RIVERS.items()],
         "features": [{"id": k, "kind": g["kind"], "closed": g["closed"],
                       "confidence": g["confidence"], "points": g["points"]}
                      for k, g in georef.GEOMETRY.items()]
