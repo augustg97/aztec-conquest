@@ -206,7 +206,7 @@ own name.
 | | |
 |---|---|
 | delivery | static site, GitHub Pages (`docs/` on `main`), relative paths, `.nojekyll`, data-version stamp |
-| total bytes over the wire | **< 25 MB** total |
+| total bytes over the wire | **< 45 MB** total — *amended 2026-07-29 (round 7), deliberately.* The original 25 MB was set before the terrain field existed and the basemaps reached 23.9 MB of it, which would have made every future raster decision a fight with a number chosen in ignorance. 45 MB keeps the ceiling real (it still forbids a tile pyramid) while leaving room for 4:4:4 coasts and a further level. **Lazy loading matters more than the total**: time-to-first-frame is the binding constraint below |
 | time to first usable frame | **< 1.5 s** to a usable map |
 | offline / `file://` required? | no — fetched JSON permitted; lazy loading from first paint |
 | pipeline? | yes — `build/`: georeferencing, terrain/lake fields, card generation, validators |

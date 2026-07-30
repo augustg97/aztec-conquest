@@ -516,10 +516,30 @@ EVENTS = [
       "moderate", ["[C3]", "[BD]", "[IXT]", "[MC]"]),
     E("chalco-counterattacks", 1521, 3, 15, "month", "battle",
       "The Mexica strike back at Chalco", "chalco",
-      "Cuauhtémoc's armies attack the defected Chalca towns repeatedly through "
-      "the spring; Chalca and coalition forces beat them off. The empire is "
-      "fighting for its granary and its road south — and losing both.",
-      "moderate", ["[C3]", "[BD]", "Chimalpahin"]),
+      "Cuauhtémoc's armies come down on the defected Chalca towns again and "
+      "again through the spring. Chalco sends to Cortés twice saying it cannot "
+      "hold alone. For some weeks the granary is genuinely back in play — the "
+      "one stretch of the war where the empire takes ground back.",
+      "moderate", ["[C3]", "[BD]", "Chimalpahin"],
+      effects=[("chalco", "contested"), ("tlalmanalco", "contested"),
+               ("amaquemecan", "contested"), ("ayotzinco", "contested")],
+      accounts=[
+        {"source": "Cortés, Third Letter (1522) [C3]",
+         "claim": "the Chalca appealed to him as their protector and he despatched relief that settled the matter",
+         "note": "the letter is a legal brief for a man who needed to look like a sovereign meeting his obligations"},
+        {"source": "Chimalpahin (Chalca annals, early 17th c.)",
+         "claim": "the fighting was Chalco's own war, fought by Chalca lords, the coalition arriving late",
+         "note": "written from inside Chalco, to record that the town was an agent and not a prize"},
+      ]),
+    E("chalco-relieved", 1521, 4, 5, "month", "campaign",
+      "Sandoval's relief: Chalco held", "chalco",
+      "Gonzalo de Sandoval is sent back to the southeast with a heavy column "
+      "and the Chalca towns are secured for good. The counter-offensive was "
+      "the empire's last chance to break the ring before it closed; from here "
+      "the coalition's line around the lakes is continuous.",
+      "moderate", ["[C3]", "[BD]", "Chimalpahin"],
+      effects=[("chalco", "allied-coalition"), ("tlalmanalco", "allied-coalition"),
+               ("amaquemecan", "allied-coalition"), ("ayotzinco", "allied-coalition")]),
     E("southern-circuit", 1521, 4, 13, "day", "campaign",
       "The southern circuit: Cuauhnáhuac and Xochimilco", "quauhnahuac",
       "Crossing the sierra, the coalition storms Cuauhnáhuac, then fights two "

@@ -354,6 +354,45 @@ _ROWS = [
      "client kingdom on the Oaxaca road", "good", "moderate",
      "allied-client status, not a Mendoza tribute province — the empire's edge was graded, not sharp"),
 
+    # ---- B1-b: the frontier provinces omitted in round 1 --------------------
+    # Held back because their capitals are poorly located; added now WITH that
+    # uncertainty on the record rather than left as a silent hole in the
+    # tributary map. Every coordinate here is the modern successor or the
+    # district Gerhard identifies, and every one carries contested/moderate
+    # confidence — the province existed; where exactly its head town stood is
+    # the open question.
+    ("atlan", "Atlan", "Atlan", "Álamo Temapache district (approx.)",
+     20.9200, -97.6800, "tributary", "Atlan",
+     (1480, "Axayácatl / Ahuítzotl", "conquest of the Huastec margin"),
+     "Huastec frontier province", "contested", "moderate",
+     "site identification debated (Gerhard); drawn at the district"),
+    ("oxitipan", "Oxitipan", "Oxitipa", "Tamuín district (approx.)",
+     21.9800, -98.7800, "tributary", "Oxitipan",
+     (1487, "Ahuítzotl", "conquest of the northern Huasteca"),
+     "northernmost province of the empire", "contested", "moderate",
+     "the empire's far northern edge; location approximate"),
+    ("quiauhteopan", "Quiyauhteopan", "Quiauhteopan", "Alcozauca region (approx.)",
+     17.4700, -98.3900, "tributary", "Quiauhteopan",
+     (1487, "Ahuítzotl", "conquest of the Montaña"),
+     "Montaña province beside Tlapan", "contested", "moderate", ""),
+    ("tlalcozauhtitlan", "Tlālcozauhtitlan", "Tlalcozotitlán", "Copalillo region",
+     17.9000, -99.1000, "tributary", "Tlalcozauhtitlan",
+     (1487, "Ahuítzotl", "conquest of the Balsas country"),
+     "Balsas-canyon province", "contested", "moderate", ""),
+    ("malinaltepec", "Malinaltepēc", "Malinaltepec", "Malinaltepec (Guerrero)",
+     17.0100, -98.6800, "tributary", "Malinaltepec",
+     (1487, "Ahuítzotl", "conquest of the Montaña"),
+     "Tlapanec-country province", "contested", "moderate", ""),
+    ("cuahuacan", "Cuahuacan", "Cuahuacan", "Huixquilucan district (approx.)",
+     19.4500, -99.4100, "tributary", "Cuahuacan",
+     (1478, "Axayácatl", "absorbed with the Matlatzinca campaigns"),
+     "timber province of the western sierra", "contested", "moderate", ""),
+    ("itzcuincuitlapilco", "Itzcuincuitlapilco", "Itzcuincuitlapilco",
+     "Mixquiahuala district (approx.)",
+     20.2300, -99.2100, "tributary", "Itzcuincuitlapilco",
+     (1440, "Moctezuma I", "absorbed northward"),
+     "maguey-lands province of the north", "contested", "moderate", ""),
+
     # ---- the independent and rival polities — the map's argument ------------
     ("metztitlan", "Mētztitlān", "Metztitlán", "Metztitlán (Hidalgo)",
      20.5940, -98.7640, "independent", None, None,

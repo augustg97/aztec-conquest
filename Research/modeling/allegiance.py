@@ -58,9 +58,16 @@ ALLOWED = {
     "tributary":        {"contested", "allied-coalition", "occupied", "new-spain"},
     "independent":      {"contested", "allied-coalition", "occupied", "new-spain"},
     "rival":            {"occupied"},
-    "contested":        {"allied-coalition", "occupied", "new-spain"},
-    "allied-coalition": {"occupied", "colonial-ally", "new-spain"},
-    "occupied":         {"new-spain"},
+    # REVERSIONS (register B2-c, added round 7). Allegiance in 1520-21 was not
+    # a ratchet: Cuitláhuac and then Cuauhtémoc spent the year after the Noche
+    # Triste trying to buy and beat the defected towns back, and in places they
+    # briefly succeeded. Excluding these transitions made the machine monotone,
+    # which flattered the coalition — every defection permanent, no cost to
+    # holding ground. The cycle allied-coalition -> contested -> allied-coalition
+    # is the Chalco spring of 1521 and it is the shape of the whole war.
+    "contested":        {"allied-coalition", "occupied", "new-spain", "tributary"},
+    "allied-coalition": {"occupied", "colonial-ally", "new-spain", "contested"},
+    "occupied":         {"new-spain", "contested"},
     "colonial-ally":    set(),
     "new-spain":        set(),
     "spanish":          set(),

@@ -288,7 +288,8 @@ def main():
             kb = os.path.getsize(p) / 1024
             total += kb
             print(f"  wrote {os.path.basename(p):24} {img.shape[1]}x{img.shape[0]}  {kb:6.0f} KB")
-    print(f"  total basemaps {total/1024:.2f} MB (budget 25 MB)")
+    print(f"  total basemaps {total/1024:.2f} MB (budget 45 MB — SCOPE §10, "
+          f"raised from 25 MB in round 7)")
 
 
 if __name__ == "__main__":

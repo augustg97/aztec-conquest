@@ -47,7 +47,7 @@ mechanisms, and added people/events/goods depth.*
 | A1 | P1 | `calendar.py` — Julian/Gregorian/JDN + tonalpohualli/xiuhpohualli, correlation explicit | `Research/modeling/calendar.py` | **DELIVERED** — selftest green; 3 Caso anchor pairs mutually consistent; veintena arithmetic reproduces Caso's 19 Tecuilhuitontli for the Noche Triste |
 | A2 | P1 | Name the canonical lake reconstruction; author the geometry; residuals | `georef.py`, `geo.js` | **DELIVERED** — **González Aparicio (1973) SEP/INAH** named; terminal residuals ≤ 6 m; footprint 15.6 km² (band 10-18); lake system 766 km² (band 700-1,600) |
 | A2-b | P2 | Acquire a scan of González Aparicio (1973) and the 1524 Nuremberg map; trace properly with pixel control points; record affine residuals | `georef.py`, `data/` | open — round-1 geometry follows the anchors + literature descriptions; **cited but not consulted in facsimile** (dossier 01 §6) |
-| A2-c | P2 | Chinampa districts drawn (archaeology + colonial surveys) | `georef.py` | open |
+| A2-c | P2 | Chinampa districts drawn (archaeology + colonial surveys) | `georef.py` | **CLOSED round 7** — derived from the shoreline, not drawn; selftest asserts they lie in the lake |
 | A2-d | P2 | Basin terrain field: INEGI CEM minus post-conquest modification, gated by the reconstruction; labelled as reconstruction | `build/` | open — the DEM is post-drainage; never present it raw |
 | A3 | P3 | Verify flagged licences before shipping any collected figure: INEGI terms; Getty DFC per-image; Bodleian/INAH; tDAR redistribution | `figures/collected/MANIFEST.json` | open — no third-party figure is shipped in round 1 (both figures authored), so nothing currently rests on it |
 
@@ -56,11 +56,11 @@ mechanisms, and added people/events/goods depth.*
 | # | P | item | touches | status |
 |---|---|---|---|---|
 | B1 | P1 | Altepetl gazetteer, first tranche | `gazetteer.py` | **DELIVERED** — 75 polities, 30 of ~38 Mendoza provinces, endonym/exonym/modern, coords + entry + confidence per row |
-| B1-b | P2 | The remaining Mendoza roster: ~9 poorly-located frontier provinces (named in gazetteer.py docstring) + the ~400 tribute towns below province level | `gazetteer.py` | open — omissions RECORDED, not silent |
+| B1-b | P2 | The remaining Mendoza roster: ~9 poorly-located frontier provinces (named in gazetteer.py docstring) + the ~400 tribute towns below province level | `gazetteer.py` | **CLOSED round 7** for the provinces (82 polities, 37 of ~38); the ~400 sub-province towns stay out of scope by SCOPE §9 |
 | B2 | P1 | Allegiance state machine | `allegiance.py` | **DELIVERED** — 75 timelines, 228 transitions, all legal; selftest asserts the coalition shape (mid-siege: 27 allied + 12 occupied vs 3 contested + 0 core) |
 | B2-b | P3 | Page/folio-level citation pinning for event dates and force claims (currently source families + modern chronologies [TH][HAS]) | `events.py`, `forces.py` | open |
-| B2-c | P4 | Mexica counter-diplomacy reversions (towns briefly regained 1520-21) — deliberately excluded from round 1 | `allegiance.py` | open, recorded in module docstring |
-| B2-d | P2 | Events catalogue: 64 events vs SCOPE's ~90 target; people cards (~40) not yet authored | `events.py`, new `people.py` | open |
+| B2-c | P4 | Mexica counter-diplomacy reversions (towns briefly regained 1520-21) — deliberately excluded from round 1 | `allegiance.py` | **IMPLEMENTED round 7** — reversion transitions added; Chalco runs the full cycle |
+| B2-d | P2 | Events catalogue: 64 events vs SCOPE's ~90 target; people cards (~40) not yet authored | `events.py`, `people.py` | events done (90); people **18 → 30** round 7; ~10 short of target |
 
 ## C. The card system
 
@@ -155,12 +155,52 @@ re-litigate):
 
 **The ceiling, stated:** photographic equivalence is unreachable — Google Earth is sub-metre aerial photography of an extant city; 1519 Tenochtitlan exists only as Calnek's lot reconstructions, the 1524 woodcut (measured 2.2 km error) and excavation. Detail past this point is invented, not derived, and the working rules forbid it.
 
-**Count: 5 open items — 0 at P1.**
+**Round 7 — the water loop, then the register itself:**
+
+| # | outcome |
+|---|---|
+| Lake realism (user) | **APPLIED** — hypsometric depth ramp with a shelf break, lake-bed fabric, crinkled shorelines, rivers with deltas. The white "brush strokes" the user then reported were long elongated ellipses (`r*3.4 × r*0.55`) at 0.26 alpha; replaced with soft radial-gradient patches (`r*1.5 × r*0.95`), alpha capped at 0.05, pale tones only above noise 0.80 and at half strength |
+| Text selection (user) | **APPLIED** — `body{user-select:none}` with the card prose re-enabled, so dragging the map no longer highlights the UI |
+| Budget ceiling (user) | **AMENDED, deliberately** — SCOPE §10 raised 25 MB → **45 MB**. The original was set before the terrain field existed and the basemaps alone are 23.9 MB. 45 MB still forbids a tile pyramid, which is the constraint that was actually doing work. `terrain.py` and `emit.py` print lines corrected to match — `emit.py` was missed on the first pass and printed the old figure for one build |
+| **B1-b** | **CLOSED** — the 7 omitted Mendoza frontier provinces added (atlan, oxitipan, quiauhteopan, tlalcozauhtitlan, malinaltepec, cuahuacan, itzcuincuitlapilco), each `coord_conf: "contested"` with a note that the province is attested and its head town's location is the open question. **82 polities, 37 of ~38 provinces.** The ~400 sub-province tribute towns remain out of scope by SCOPE §9 |
+| **A2-c** | **CLOSED** — the four chinampa districts, **derived, not drawn**: each is the southern lake's own shoreline over a named longitude span, offset inward by a stated width, clamped to the far shore where the lake is narrower than the district would be. Selftest asserts every vertex lies inside the lake (a chinampa on dry ground is a category error) and that the four together stay under 55% of it |
+| **B2-c** | **IMPLEMENTED, not closed negative** — the reversion transitions were the gap, and they were a real distortion: excluding them made the state machine monotone, so every defection was permanent and holding ground cost nothing. `allied-coalition → contested → allied-coalition` now exists and Chalco runs the full cycle (tributary → coalition Jan 1521 → **contested** Mar → coalition Apr → new-spain). `chalco-counterattacks` already existed **with an empty `effects` list** — the event was on the map, doing nothing |
+| **B2-d** | **ADVANCED 18 → 30** — the round-7 tranche corrects a bias the first list had: three Mexica lords against six Spaniards, which quietly argued against this model's own thesis. Adds the other two alliance seats (Coanacochtzin, Tetlepanquetzatzin), the administration that survived the conquest (Tlacotzin), Tlatelolco's governor, one ordinary soldier (Tzilacatzin), and the witnesses whose books every other card cites |
+
+**Honest corrections recorded this round:**
+
+- The first chinampa attempt painted **translucent green over water** — a tint, not a place. A
+  chinampa is *built ground standing out of the lake*, so the base had to be land far out and
+  **ditch water** close in, with the plots drawn on top. Painting land under land is what made
+  it read as one flat green field.
+- The districts were first authored as four hand-drawn blobs, then rewritten as offsets of the
+  measured shoreline. The rewrite immediately caught two authoring errors the blobs had hidden:
+  a span running **past the east end of the lake** (now a loud `ValueError`, not a `TypeError`
+  ten frames later) and four **contiguous** spans that tiled into one unbroken band.
+- Scale stated rather than fudged: the four come to ~46 km² against Parsons' ~120 km² for the
+  real system. The gap is the **simplified lake** (124 km² vs a real ~200 km²), not a claim that
+  the system was smaller. Widening the districts alone to hit the literature number would put
+  chinampas in open water to make a total look right.
+- **Chimalpahin was rejected as a person card** — born 1579, outside the 1502-1551 window. A
+  card would have needed an `active` span the man did not have. He stays a source.
+- The card audit caught `New Spain` in a Mendoza era spanning from 1502 — a term that does not
+  exist until 1520.8. The gate refused the publish; the era was reworded.
+- A per-plot `fillStyle` + `fillRect` cost **9.6 ms/frame** at close zoom (measured by A/B, not
+  guessed). Batching into three fills by crop colour → **0.16 ms**. The world-anchored mottle
+  step was the same round-6 mistake again (cost explodes as the camera pulls back) and was put
+  back on constant *screen* density.
+- The true-scale canal lattice read as **graph paper** at mid zoom; it now fades out below ~16 px
+  spacing and lets the district's texture carry it.
+- Two screenshots came back **pixel-identical** after real edits. `js/app.js` carries no
+  cache-buster in dev, so the browser served a stale file. Caught by reading the function source
+  back through the console (`/cpx - 7/.test(String(drawChinampas))`), not by looking harder at
+  the picture. This is the third appearance of this trap.
+
+**Count: 4 open items — 0 at P1.**
 
 1. **A2-b-rest** consult González Aparicio (1973) in facsimile and trace properly (no
-   licence-safe digital scan surfaced; likely a library visit).
-2. **A2-c** chinampa districts (authorable; medium).
-3. **B1-b** remaining Mendoza roster (location research).
-4. **B2-d-rest** people 18 → ~40; images for the 5 negatives; ring-closes chapter image;
-   **B2-b** page/folio pinning.
-5. **B2-c** reversions (thin; may close negative). Polish: basin/meso zoom seam.
+   licence-safe digital scan surfaced; likely a library visit). **Cannot be done from here.**
+2. **B2-d-rest** people 30 → ~40; retry the 5 recorded image negatives; ring-closes chapter
+   image.
+3. **B2-b** page/folio-level citation pinning for event dates and force claims.
+4. Polish: basin/meso zoom seam.

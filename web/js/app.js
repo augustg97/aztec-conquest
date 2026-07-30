@@ -138,6 +138,17 @@ function unproject(x, y) {
   return [(x - PROJ.x0) / (PROJ.kx * PROJ.s), (PROJ.y0 - y) / PROJ.s];
 }
 
+// the lon/lat window currently on screen, [lo0, la0, lo1, la1] — the bound that
+// keeps per-plot and per-patch loops at constant cost no matter how far in the
+// camera goes
+function viewWindow(pad = 0.02) {
+  const r = svg.getBoundingClientRect();
+  const [lo0, la1] = unproject(0, 0);
+  const [lo1, la0] = unproject(r.width, r.height);
+  const dx = (lo1 - lo0) * pad, dy = (la1 - la0) * pad;
+  return [lo0 - dx, la0 - dy, lo1 + dx, la1 + dy];
+}
+
 function onScreen(x, y, m = 40) {
   const r = svg.getBoundingClientRect();
   return x > -m && y > -m && x < r.width + m && y < r.height + m;
@@ -762,22 +773,25 @@ function drawLakeBed(f, pts) {
       const [bx, by] = project(lo, la);
       if (bx < -20 || by < -20 || bx > PROJ.W + 20 || by > PROJ.H + 20) continue;
       const s = Math.round(lo * 1e5) * 47 + Math.round(la * 1e5);
-      const r = step * PROJ.s * (0.5 + rnd(s) * 0.55);
-      // subtle, and mostly DARKER — the reference's sea floor is fabric you
-      // half-see, not foam. The first attempt at 0.26 alpha in pale tones
-      // covered the lake in cloud.
-      const strength = Math.min(0.085, (n - 0.46) * 0.24);
-      const pale = n > 0.72;
-      ctx.fillStyle = pale
-        ? (fresh ? `rgba(120,170,140,${strength.toFixed(3)})`
-                 : `rgba(196,208,200,${strength.toFixed(3)})`)
-        : (fresh ? `rgba(24,58,60,${(strength * 1.5).toFixed(3)})`
-                 : `rgba(16,40,74,${(strength * 1.5).toFixed(3)})`);
-      // fabric, not blobs: each shoal is elongated along a slowly-turning
-      // field, the way a lake bed's shoals lie along the prevailing set
-      const ang = (smoothNoise(lo, la, 0.030) - 0.5) * 2.4 + 0.5;
+      const r = step * PROJ.s * (1.1 + rnd(s) * 0.8);
+      // DIFFUSE, and mostly darker. A shallow turbid lake shows sediment and
+      // shoal as soft patches you half-see — not the long pale feathers the
+      // elongated version drew, which read as brush strokes on water. Soft
+      // radial falloff, low alpha, and pale only rarely and faintly.
+      const strength = Math.min(0.05, (n - 0.46) * 0.14);
+      const pale = n > 0.80;
+      const col = pale
+        ? (fresh ? '150,190,160' : '186,204,200')
+        : (fresh ? '26,62,64' : '20,48,80');
+      const a = pale ? strength * 0.5 : strength;
+      const g = ctx.createRadialGradient(bx, by, 0, bx, by, r);
+      g.addColorStop(0, `rgba(${col},${a.toFixed(3)})`);
+      g.addColorStop(0.6, `rgba(${col},${(a * 0.45).toFixed(3)})`);
+      g.addColorStop(1, `rgba(${col},0)`);
+      ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.ellipse(bx, by, r * 3.4, r * 0.55, ang, 0, 7);
+      ctx.ellipse(bx, by, r * 1.5, r * 0.95,
+                  (smoothNoise(lo, la, 0.030) - 0.5) * 2.0, 0, 7);
       ctx.fill();
     }
   }
@@ -789,6 +803,165 @@ function drawLakeBed(f, pts) {
   ctx.lineWidth = Math.max(1.2, 0.00035 * PROJ.s);
   ctx.stroke();
   ctx.setLineDash([]);
+}
+
+function inPoly(pt, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
+    if ((yi > pt[1]) !== (yj > pt[1]) &&
+        pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/* The chinampa districts of the southern lakes — the raised fields that fed the
+ * Basin, and the reason the dike of Nezahualcóyotl was built to hold the saline
+ * water off them. Drawn at TRUE SCALE: a chinampa is a plot of about 6-10 m by
+ * 100 m with a canoe canal beside it, so at Basin zoom one plot is a fraction of
+ * a pixel. Rather than draw fat fake stripes, the pitch stays true and the
+ * renderer drops to a blended tone once a plot falls under ~1.4 px — which is
+ * what the chinampería actually looks like from that height anyway. */
+function drawChinampas(wet) {
+  if (!D.geo.chinampaZones || state.cam.span > 2.0) return;
+  const lakes = D.geo.features.filter(f => f.kind === 'lake');
+  const PITCH = 0.000115;                  // ~12 m: plot + its canal
+  const PLOT  = 0.00082;                   // ~91 m: a plot's long axis
+  const px = PITCH * PROJ.s;
+
+  for (const z of D.geo.chinampaZones) {
+    const zp = crinkled('chin-' + z.id, z.points, 0.0016);
+    const c = [z.points.reduce((s, p) => s + p[0], 0) / z.points.length,
+               z.points.reduce((s, p) => s + p[1], 0) / z.points.length];
+    const host = lakes.find(f => inPoly(c, f.points));
+    ctx.save();
+    // clip to the lake FIRST: a chinampa district is water that has been built
+    // up, so it can never spill past the shoreline onto dry ground
+    if (host) { cpath(crinkled(host.id, host.points, 0.0032), true); ctx.clip(); }
+    cpath(zp, true);
+    ctx.clip();
+
+    const xs = zp.map(p => p[0]), ys = zp.map(p => p[1]);
+    const a0 = Math.min(...xs), a1 = Math.max(...xs);
+    const b0 = Math.min(...ys), b1 = Math.max(...ys);
+    const vw = viewWindow();
+    const lo0 = Math.max(a0, vw[0]), lo1 = Math.min(a1, vw[2]);
+    const la0 = Math.max(b0, vw[1]), la1 = Math.min(b1, vw[3]);
+
+    // A chinampa is BUILT GROUND standing out of the lake — not a tint over the
+    // water. So the district is painted as land, opaque, and what gets drawn on
+    // top is the water cut INTO it. Getting this backwards is what made the
+    // first attempt read as a translucent slab floating on the lake.
+    const resolved = px >= 1.4;
+    const [gx0, gy0] = project(a0, b1), [gx1, gy1] = project(a1, b0);
+    const base = ctx.createLinearGradient(0, gy0, 0, gy1);
+    if (resolved) {
+      // close in, the plots themselves get drawn, so what the base has to be is
+      // the DITCH WATER they stand in. Painting land here and land again on top
+      // is what made the first pass read as one flat green field.
+      base.addColorStop(0, '#2f5560');
+      base.addColorStop(1, '#3b6672');
+    } else {
+      // far out, a single plot is sub-pixel and the honest base is the blend
+      base.addColorStop(0, wet ? '#4e6a44' : '#6b7247');  // far edge, wetter
+      base.addColorStop(1, wet ? '#5d7a4b' : '#7c8152');  // shore edge, drier
+    }
+    ctx.fillStyle = base;
+    ctx.fillRect(gx0, gy0, gx1 - gx0, gy1 - gy0);
+    // the mottle of crop, fallow and standing water within the district
+    // constant SCREEN density, not constant world density: a world-anchored
+    // step means the cell count explodes as the camera pulls back, which is
+    // exactly the shape of the lake-fabric regression from round 6
+    const stp = Math.max(0.00022, 5.0 / PROJ.s);
+    if (!resolved) {
+      const s = stp * PROJ.s + 1;
+      for (let lo = lo0; lo < lo1; lo += stp) {
+        for (let la = la0; la < la1; la += stp) {
+          const n = smoothNoise(lo, la, 0.0019);
+          if (n > 0.42 && n < 0.58) continue;        // most cells: nothing to paint
+          const [qx, qy] = project(lo, la);
+          ctx.fillStyle = n > 0.58 ? `rgba(58,88,48,${((n - 0.58) * 0.9).toFixed(3)})`
+                                   : `rgba(78,116,116,${((0.42 - n) * 0.8).toFixed(3)})`;
+          ctx.fillRect(qx, qy, s, s);
+        }
+      }
+    } else {
+      // The plots themselves, standing out of the ditch water already painted.
+      // BATCHED BY CROP COLOUR: a district at this zoom is several thousand
+      // plots, and a per-plot fillStyle string plus a per-plot fill is most of
+      // the cost. Three colours means three fills, whatever the plot count.
+      const w = Math.max(1, PITCH * 0.62 * PROJ.s);
+      const CROP = ['rgba(92,132,74,.94)',      // maize standing
+                    'rgba(116,140,80,.94)',     // second crop, thinner
+                    'rgba(134,132,94,.94)'];    // fallow mud
+      const bins = [[], [], []], willows = [];
+      const wt = px > 6;
+      for (let lo = Math.floor(lo0 / PITCH) * PITCH; lo < lo1; lo += PITCH) {
+        // the block ends stagger — a chinampería is not graph paper
+        const jit = (rnd(Math.round(lo * 1e5) * 17) - 0.5) * PLOT * 0.30;
+        for (let la = Math.floor(la0 / PLOT) * PLOT; la < la1; la += PLOT) {
+          const r = rnd(Math.round(lo * 1e5) * 733 + Math.round(la * 1e5) * 91);
+          if (r > 0.94) continue;                       // a plot let go to water
+          const [qx, qy] = project(lo, la + jit + PLOT * 0.94);
+          const [, qy2] = project(lo, la + jit + PLOT * 0.06);
+          const g = smoothNoise(lo, la, 0.0022);        // maize, or fallow mud
+          bins[g > 0.55 ? 0 : g > 0.42 ? 1 : 2].push(qx, qy, qy2 - qy);
+          // the willow (ahuejote) rows whose roots pinned the plots' edges
+          if (wt && r > 0.72) {
+            const n = Math.max(2, Math.round((qy2 - qy) / (px * 2.2)));
+            for (let k = 0; k < n; k++)
+              willows.push(qx + w * 0.80, qy + (qy2 - qy) * (k + 0.5) / n);
+          }
+        }
+      }
+      for (let b = 0; b < 3; b++) {
+        if (!bins[b].length) continue;
+        ctx.fillStyle = CROP[b];
+        ctx.beginPath();
+        for (let i = 0; i < bins[b].length; i += 3)
+          ctx.rect(bins[b][i], bins[b][i + 1], w, bins[b][i + 2]);
+        ctx.fill();
+      }
+      if (willows.length) {
+        const ws = Math.max(1, px * 0.34);
+        ctx.fillStyle = 'rgba(52,80,46,.8)';
+        ctx.beginPath();
+        for (let i = 0; i < willows.length; i += 2)
+          ctx.rect(willows[i], willows[i + 1], ws, ws);
+        ctx.fill();
+      }
+    }
+
+    // the navigation canals — 10-20 m wide and a few hundred metres apart, so
+    // unlike the plot ditches these ARE resolvable from height, and they are
+    // what gives the chinampería its visible grain at every zoom. Drawn LAST:
+    // a canal is water cut through the fields, so it has to survive the plots.
+    const CANAL = 0.0042;                       // ~460 m between main canals
+    // ...but only while they are far enough apart on screen to read AS canals.
+    // Once the spacing tightens past ~16 px a true-scale lattice stops looking
+    // like waterways and starts looking like graph paper ruled over the lake,
+    // so it fades out and the district's texture carries it instead.
+    const cpx = CANAL * PROJ.s;
+    const ca = Math.min(1, Math.max(0, (cpx - 7) / 12));
+    if (ca <= 0.01) { ctx.restore(); continue; }
+    ctx.strokeStyle = resolved ? `rgba(44,84,96,${(0.92 * ca).toFixed(3)})`
+                               : `rgba(60,100,112,${(0.85 * ca).toFixed(3)})`;
+    ctx.lineWidth = Math.max(0.7, 0.00016 * PROJ.s);
+    ctx.beginPath();
+    for (let lo = Math.floor(lo0 / CANAL) * CANAL; lo < lo1; lo += CANAL) {
+      const w1 = (smoothNoise(lo, b0, 0.004) - 0.5) * 0.0008;
+      const [ax, ay] = project(lo + w1, b0 - 0.002);
+      const [bx2, by2] = project(lo - w1, b1 + 0.002);
+      ctx.moveTo(ax, ay); ctx.lineTo(bx2, by2);
+    }
+    for (let la = Math.floor(la0 / CANAL) * CANAL; la < la1; la += CANAL) {
+      const [ax, ay] = project(a0 - 0.002, la);
+      const [bx2, by2] = project(a1 + 0.002, la);
+      ctx.moveTo(ax, ay); ctx.lineTo(bx2, by2);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
 }
 
 function drawLakes(wet) {
@@ -824,7 +997,7 @@ function drawLakes(wet) {
     if (zoomed) drawLakeBed(f, pts);
     if (zoomed) {
       // ripple, world-anchored so it does not swim
-      ctx.strokeStyle = 'rgba(226,240,250,.07)';
+      ctx.strokeStyle = 'rgba(226,240,250,.035)';
       ctx.lineWidth = Math.max(0.5, 0.00004 * PROJ.s);
       const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
       const lo0 = Math.min(...xs), lo1 = Math.max(...xs);
@@ -859,6 +1032,8 @@ function drawLakes(wet) {
     ctx.strokeStyle = `rgba(186,212,222,${(0.34 + 0.16 * wet).toFixed(3)})`;
     ctx.stroke();
   }
+  drawChinampas(wet);
+
   // the rivers, widening downstream, with a delta where they meet the lake
   if (state.cam.span < 3.0 && D.geo.rivers) {
     for (const r of D.geo.rivers) {

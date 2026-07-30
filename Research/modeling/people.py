@@ -1,8 +1,19 @@
-"""People of the war — first tranche (register B2-d). Stdlib only.
+"""People of the war (register B2-d). Stdlib only.
 
-Eighteen of the scope's ~40 people, chosen because the events already name
-them: the tlahtohqueh, the coalition's architects, the captains, and the
-figures through whom the aftermath ran. People are CARDS, not map dots — they
+Thirty of the scope's ~40 people. The first eighteen were chosen because the
+events already named them: the tlahtohqueh, the coalition's architects, the
+captains, and the figures through whom the aftermath ran. The round-7 tranche
+corrects that list's bias — it ran three Mexica lords against six Spaniards,
+which quietly argued the opposite of this model's thesis — by adding the
+second and third alliance seats (Coanacochtzin, Tetlepanquetzatzin), the
+administration that survived the conquest (Tlacotzin), Tlatelolco's governor
+and one of its ordinary soldiers, and the WITNESSES whose books every other
+card cites (Bernal Díaz, Aguilar, Velázquez de Cuéllar).
+
+ONE CANDIDATE WAS REJECTED, and the reason is a rule: Chimalpahin, the Chalca
+annalist this model leans on for Chalco's point of view, was born in 1579 —
+outside the 1502-1551 window. A card for him would have required an `active`
+span the man did not have. He stays a source and does not become a person. People are CARDS, not map dots — they
 move; the app lists whoever is politically active at t and the card's eras
 rewrite themselves like every other card's, including past death ("what
 became of them" is part of the model, so the eras tile to the model's end).
@@ -343,6 +354,305 @@ PEOPLE = [
                 "card. The source is being written inside the model's window."}],
       [["Arrives", "1529"], ["Begins the work", "c. 1547, Tlatelolco"],
        ["Died", "1590, Mexico City"]]),
+
+    # ------------------------------------------------------------------ #
+    # Round 7 tranche (register B2-d). Weighted deliberately toward the    #
+    # Nahua side: the model's argument is that this was a war fought       #
+    # mostly by Nahua polities against a Nahua empire, and a cast that     #
+    # ran three Mexica lords against six Spaniards was quietly arguing     #
+    # the opposite. Also adds the WITNESSES — the men whose books are the  #
+    # sources every other card cites — because who wrote the record is     #
+    # itself one of this model's claims (SCOPE §5).                        #
+    # ------------------------------------------------------------------ #
+
+    P("coanacochtzin", "Coanacochtzin",
+      "tlatoani of Tetzcohco — the half of Texcoco that stayed",
+      (_t(1520, 1, 1), _t(1525, 3, 1)), "moderate",
+      ["[FC]", "Alva Ixtlilxóchitl", "[TH]"],
+      [{"from": T0, "to": _t(1520, 1, 1),
+        "text": "A son of Nezahualpilli in a succession the empire had already "
+                "interfered with once. Texcoco, the alliance's second seat and its "
+                "house of law and letters, enters the war with its royal family "
+                "split down the middle."},
+       {"from": _t(1520, 1, 1), "to": _t(1521, 8, 13),
+        "text": "Takes Texcoco's rulership and holds it for the Mexica while his "
+                "brother Ixtlilxóchitl takes the north for the coalition. When the "
+                "coalition occupies the city at the end of 1520 he withdraws to "
+                "Tenochtitlan and fights the siege from inside it. The single most "
+                "important fact about Texcoco in this war is that it was on both "
+                "sides at once."},
+       {"from": _t(1521, 8, 13), "to": T1,
+        "text": "Taken with Cuauhtémoc at the fall. Hanged with him and with "
+                "Tetlepanquetzatzin on the Honduras march of 1525, on a charge of "
+                "conspiracy that no source outside Cortés's own circle supports."}],
+      [["Rules", "c. 1520 – 1521"], ["Seat", "Tetzcohco"],
+       ["Died", "1525, on the Honduras march"]],
+      note="his brother Ixtlilxóchitl's descendants wrote much of the surviving "
+           "Texcocan record, and they wrote him as the loser he was"),
+
+    P("tetlepanquetzatzin", "Tetlepanquetzatzin",
+      "tlatoani of Tlacopan — the third seat, to the end",
+      (_t(1515, 1, 1), _t(1525, 3, 1)), "moderate",
+      ["[FC]", "[C3]", "[TH]"],
+      [{"from": T0, "to": _t(1519, 11, 8),
+        "text": "Lord of the smallest of the three alliance seats — Tlacopan took a "
+                "fifth of the tribute where Tenochtitlan and Texcoco took two fifths "
+                "each, and its independence of action was proportionate."},
+       {"from": _t(1519, 11, 8), "to": _t(1521, 8, 13),
+        "text": "Stays with the Mexica through everything: the hostage year, the "
+                "expulsion, the smallpox, the siege. Tlacopan is the western causeway's "
+                "landward end and becomes Alvarado's siege camp; its lord fights on "
+                "from the island after his own city is lost."},
+       {"from": _t(1521, 8, 13), "to": T1,
+        "text": "Captured at the fall, tortured with Cuauhtémoc over the missing "
+                "treasure, and hanged beside him in 1525. The Triple Alliance ends "
+                "with two of its three rulers on the same rope."}],
+      [["Seat", "Tlacopan"], ["Tribute share", "one fifth"],
+       ["Died", "1525, on the Honduras march"]]),
+
+    P("tlacotzin", "Tlacotzin (don Juan Velázquez Tlacotzin)",
+      "cihuacoatl — the empire's chief minister, and its first colonial governor",
+      (_t(1519, 1, 1), _t(1526, 6, 1)), "moderate",
+      ["[FC]", "Chimalpahin", "[TH]"],
+      [{"from": T0, "to": _t(1520, 9, 1),
+        "text": "The cihuacoatl was the standing half of Mexica government — internal "
+                "administration, justice and the tribute machinery — against the "
+                "tlatoani's external and military half. The office ran the state "
+                "while the huey tlatoani fought."},
+       {"from": _t(1520, 9, 1), "to": _t(1521, 8, 13),
+        "text": "Serves Cuauhtémoc through the siege and is captured with him. It is "
+                "Tlacotzin, in the Nahua accounts, who answers the Spanish "
+                "interrogation about the treasure — the administrator explaining that "
+                "the gold the conquerors are looking for went into the lake on the "
+                "night they threw it there."},
+       {"from": _t(1521, 8, 13), "to": T1,
+        "text": "Baptised don Juan Velázquez and installed as governor of the ruined "
+                "city — the empire's chief bureaucrat kept on to administer its "
+                "conquest. Dies in 1526 returning from the same Honduras march that "
+                "killed the lords he had served."}],
+      [["Office", "cihuacoatl"], ["Then", "governor of Tenochtitlan, 1521-26"],
+       ["Died", "1526"]],
+      note="the continuity of Mexica administration through the conquest is one of "
+           "the least-told facts of it"),
+
+    P("itzquauhtzin", "Itzquauhtzin",
+      "tlacochcalcatl and governor of Tlatelolco",
+      (_t(1515, 1, 1), _t(1520, 7, 1)), "moderate",
+      ["[FC]", "[TH]"],
+      [{"from": T0, "to": _t(1519, 11, 8),
+        "text": "Governor of Tlatelolco — the twin city Tenochtitlan had conquered in "
+                "1473 and ruled through military governors ever since. Tlatelolco kept "
+                "the empire's greatest market and a permanent grievance."},
+       {"from": _t(1519, 11, 8), "to": _t(1520, 7, 1),
+        "text": "Held with Moctezuma through the hostage months and killed at the same "
+                "time, in the same place, in the same disputed circumstances. His body "
+                "is thrown out of the palace with Moctezuma's; the Tlatelolca who gave "
+                "Sahagún his account remembered that theirs was received with grief "
+                "and Moctezuma's with anger."},
+       {"from": _t(1520, 7, 1), "to": T1,
+        "text": "Remembered in Book XII, which is a Tlatelolca book — the fullest "
+                "surviving Nahua account of the war is told from the city he governed, "
+                "and it is not a Tenochca story."}],
+      [["Office", "governor of Tlatelolco"],
+       ["Died", "late June 1520, with Moctezuma"]]),
+
+    P("tzilacatzin", "Tzilacatzin",
+      "Otomi warrior of Tlatelolco — the war fought from below",
+      (_t(1520, 6, 1), _t(1521, 8, 13)), "contested",
+      ["[FC]"],
+      [{"from": T0, "to": _t(1520, 6, 1),
+        "text": "An otomitl — a member of one of the Mexica warrior societies entered "
+                "by capture-count rather than by birth. The model's other cards are "
+                "lords; this one is a soldier, because the sources contain a few and "
+                "the war was fought by them."},
+       {"from": _t(1520, 6, 1), "to": _t(1521, 8, 13),
+        "text": "Named repeatedly in Book XII as breaking Spanish and Tlaxcalteca "
+                "attacks in Tlatelolco by hurling stones, fighting in three different "
+                "disguises so the enemy could not learn to expect him. He is the only "
+                "common soldier in this model with a name, and he has one because his "
+                "own city's elders insisted on it thirty years later."},
+       {"from": _t(1521, 8, 13), "to": T1,
+        "text": "No source records what became of him. The silence is ordinary: the "
+                "record keeps lords and loses everyone else, and the exception here "
+                "exists only because Sahagún asked Tlatelolca veterans directly."}],
+      [["Society", "otomitl"], ["City", "Tlatelolco"], ["Fate", "unrecorded"]],
+      note="a named individual attested in one source only — kept because what it "
+           "shows about the record is worth as much as the man",
+      accounts=[
+        {"source": "Florentine Codex Bk XII [FC]",
+         "claim": "Tzilacatzin personally broke several assaults and was famous enough to be named",
+         "note": "a heroic set-piece in a book collected from the survivors of the losing side, decades on"},
+        {"source": "the model's reading",
+         "claim": "the details are not independently checkable and may be composite or embellished",
+         "note": "shown as testimony, not as established fact — the card says who is speaking"},
+      ]),
+
+    P("cuauhpopoca", "Cuauhpopoca",
+      "Mexica governor at Nauhtla — the burning that made the hostage regime",
+      (_t(1519, 8, 1), _t(1519, 12, 1)), "contested",
+      ["[C2]", "[BD]", "[FC]", "[TH]"],
+      [{"from": T0, "to": _t(1519, 8, 1),
+        "text": "One of the empire's provincial governors on the Gulf coast, in the "
+                "zone where Totonac towns had just stopped paying tribute under "
+                "Spanish protection — the exact place where imperial authority and the "
+                "new arrivals had to collide first."},
+       {"from": _t(1519, 8, 1), "to": _t(1519, 12, 1),
+        "text": "A clash near Nauhtla kills several Spaniards. Cortés uses it to demand "
+                "Moctezuma hand the governor over, then has him burned alive in the "
+                "square outside the palace — with Moctezuma put in irons while it "
+                "happens. It is the moment the captivity stops being a fiction of "
+                "hospitality, and it is staged as theatre."},
+       {"from": _t(1519, 12, 1), "to": T1,
+        "text": "Whether he acted on Moctezuma's orders is the whole question, and "
+                "every source answers it in its own interest."}],
+      [["Post", "Nauhtla, Gulf coast"], ["Died", "late 1519, burned in Tenochtitlan"]],
+      accounts=[
+        {"source": "Cortés, Second Letter [C2]",
+         "claim": "the governor confessed that Moctezuma ordered the attack, justifying both the execution and the irons",
+         "note": "the confession is reported by the man who needed it to exist; it arrives exactly when his legal position requires it"},
+        {"source": "Nahua accounts [FC] and modern readings [TH]",
+         "claim": "the execution was a demonstration staged to convert a guest's presence into a hostage's, whatever the governor had done",
+         "note": "no Nahua source records the order Cortés says was confessed to"},
+      ]),
+
+    P("aguilar", "Jerónimo de Aguilar",
+      "interpreter — the first link in the chain",
+      (_t(1519, 3, 1), _t(1526, 1, 1)), "good",
+      ["[BD]", "[C2]", "[TH]"],
+      [{"from": T0, "to": _t(1519, 3, 1),
+        "text": "Shipwrecked on the Yucatán coast in 1511 and held among the Maya for "
+                "eight years, learning Yucatec Maya as a captive. A priest by training, "
+                "and by 1519 barely distinguishable from the people he lived with."},
+       {"from": _t(1519, 3, 1), "to": _t(1521, 8, 13),
+        "text": "Ransomed by Cortés and made half of the translation chain: Nahuatl to "
+                "Maya by Malintzin, Maya to Spanish by Aguilar. Every word exchanged "
+                "between Moctezuma and Cortés in 1519 passed through two people and "
+                "three languages — which is the single best reason to distrust every "
+                "speech the sources record."},
+       {"from": _t(1521, 8, 13), "to": T1,
+        "text": "Displaced as Malintzin's Spanish improves and the middle link becomes "
+                "unnecessary. Given an encomienda; dies in Mexico City around 1531, "
+                "far less remembered than the woman he worked beside."}],
+      [["Captive", "1511-1519, Yucatán"], ["Chain", "Nahuatl → Maya → Spanish"],
+       ["Died", "c. 1531"]]),
+
+    P("gonzalo-guerrero", "Gonzalo Guerrero",
+      "the shipwreck's other survivor — the man who refused",
+      (T0, _t(1536, 1, 1)), "contested",
+      ["[BD]", "Landa", "[TH]"],
+      [{"from": T0, "to": _t(1519, 3, 1),
+        "text": "Wrecked on the same coast as Aguilar in 1511. Where Aguilar remained a "
+                "captive priest, Guerrero rose among the Maya of Chetumal, married a "
+                "noblewoman, had children, and became a war captain — the first "
+                "Spaniard to take a side and stay on it."},
+       {"from": _t(1519, 3, 1), "to": _t(1536, 1, 1),
+        "text": "Sent the same ransom offer as Aguilar and refused it. In Bernal Díaz's "
+                "telling he points to his tattooed face and pierced ears and says his "
+                "children are handsome — the flat, unanswerable refusal that the whole "
+                "enterprise had no category for. He is then reported fighting Spanish "
+                "expeditions in Yucatán and Honduras for another fifteen years."},
+       {"from": _t(1536, 1, 1), "to": T1,
+        "text": "Reported killed by gunshot fighting against a Spanish force in "
+                "Honduras around 1536. The model keeps him because the conquest is "
+                "usually told as if crossing over ran in one direction only."}],
+      [["Wrecked", "1511, Yucatán"], ["Refused ransom", "1519"],
+       ["Died", "c. 1536, Honduras (reported)"]],
+      accounts=[
+        {"source": "Bernal Díaz [BD]; Landa",
+         "claim": "Guerrero refused ransom, led Maya forces, and died fighting Spaniards",
+         "note": "the famous refusal speech is reported second-hand by men who were not there; the outline is corroborated, the words are not"},
+        {"source": "modern scholarship [TH]",
+         "claim": "much of the surrounding detail is later accretion, and he has been retrospectively made a symbol by parties who need one",
+         "note": "the model states the outline and marks the speech as literature"},
+      ]),
+
+    P("bernal-diaz", "Bernal Díaz del Castillo",
+      "soldier, and the memoirist this model argues with",
+      (_t(1519, 2, 1), T1), "good",          # he outlives the window; the card stops with it
+      ["[BD]", "[TH]"],
+      [{"from": T0, "to": _t(1519, 2, 1),
+        "text": "A soldier from Medina del Campo, on the earlier Córdoba and Grijalva "
+                "voyages before Cortés's — one of the few men in the enterprise who "
+                "had seen the coast three times before the war started."},
+       {"from": _t(1519, 2, 1), "to": _t(1521, 8, 13),
+        "text": "Present through the whole campaign in the ranks, not the command tent. "
+                "His account is the only sustained one from that level, and its "
+                "particularity — who stood where, what was eaten, which horse — is why "
+                "it survives being wrong about so much else."},
+       {"from": _t(1521, 8, 13), "to": T1,
+        "text": "Settles in Guatemala and writes the Historia verdadera decades later, "
+                "in old age and open irritation at Gómara's court history, which had "
+                "given Cortés everything and the men nothing. It is a counter-memoir "
+                "with a grievance, which is exactly how this model reads it."}],
+      [["Campaigns", "1517, 1518, 1519-21"], ["Writes", "from c. 1550s, Guatemala"],
+       ["Died", "1584, Santiago de Guatemala"]],
+      note="a witness with an interest: he is arguing for the veterans' rewards, and "
+           "against a rival book, on every page"),
+
+    P("velazquez-cuba", "Diego Velázquez de Cuéllar",
+      "governor of Cuba — the war Cortés fought behind him",
+      (T0, _t(1524, 6, 1)), "good",
+      ["[C1]", "[BD]", "[TH]"],
+      [{"from": T0, "to": _t(1519, 2, 1),
+        "text": "Conqueror and then governor of Cuba, and the man who commissioned the "
+                "expedition — as a trading and reconnaissance voyage, under his "
+                "authority, with his money in it."},
+       {"from": _t(1519, 2, 1), "to": _t(1521, 8, 13),
+        "text": "Tries to recall the fleet before it sails, then spends two years "
+                "trying to arrest the man who took it. Narváez's expedition of 1520 is "
+                "his; it delivers Cortés eight hundred more men and the smallpox. Half "
+                "of what Cortés does in Mexico is shaped by needing a legal case "
+                "against this one Spaniard."},
+       {"from": _t(1521, 8, 13), "to": T1,
+        "text": "Loses the jurisdictional fight at court and dies in Cuba in 1524, the "
+                "conquest of Mexico having been carried out in defiance of his orders "
+                "and then legitimised over his objection."}],
+      [["Office", "governor of Cuba"], ["Sends Narváez", "1520"],
+       ["Died", "1524, Santiago de Cuba"]],
+      note="the Cortés letters are addressed to the crown about this quarrel as much "
+           "as about the war"),
+
+    P("antonio-mendoza", "Antonio de Mendoza",
+      "first viceroy of New Spain",
+      (_t(1535, 11, 14), T1), "good",
+      ["[TH]", "Codex Mendoza"],
+      [{"from": T0, "to": _t(1535, 11, 14),
+        "text": "In Spain, in the crown's service, while the territory he will "
+                "eventually govern is first the Triple Alliance's and then, after "
+                "1521, run by conquistador government and by two Audiencias — the "
+                "first of them violent enough that the crown recalled it."},
+       {"from": _t(1535, 11, 14), "to": _t(1550, 1, 1),
+        "text": "Arrives as the crown's answer to rule by conquerors: royal government, "
+                "the encomienda curbed on paper, the New Laws of 1542 pushed through "
+                "far enough to provoke and not far enough to end the system. The Codex "
+                "Mendoza — the tribute roll this model's gazetteer is built on — is "
+                "compiled for him, to show Spain what had been taken."},
+       {"from": _t(1550, 1, 1), "to": T1,
+        "text": "Leaves for Peru in 1550. The model's window closes on a functioning "
+                "colonial state, which is the point at which the conquest stops being "
+                "an event and becomes an arrangement."}],
+      [["Viceroy", "1535-1550"], ["Commissions", "the Codex Mendoza, c. 1541"],
+       ["Then", "viceroy of Peru, 1551"]]),
+
+    P("nuno-guzman", "Nuño Beltrán de Guzmán",
+      "president of the first Audiencia — the violence after the war",
+      (_t(1528, 12, 1), _t(1538, 1, 1)), "good",
+      ["[TH]", "Las Casas"],
+      [{"from": T0, "to": _t(1528, 12, 1),
+        "text": "Governor of Pánuco from 1527, where he ran a slave trade shipping "
+                "Huastec people to the Caribbean islands — the model's window includes "
+                "this because the conquest's economics did not stop at the fall."},
+       {"from": _t(1528, 12, 1), "to": _t(1538, 1, 1),
+        "text": "Heads the first Audiencia, whose rule is corrupt and brutal enough that "
+                "the crown recalls it; then leads the campaigns into the west and "
+                "northwest that become Nueva Galicia, with a reputation for cruelty "
+                "marked even by the standards of the men around him. Arrested in 1537."},
+       {"from": _t(1538, 1, 1), "to": T1,
+        "text": "Sent back to Spain and held under a form of house arrest until his "
+                "death in 1558, never tried. Included because the aftermath was not a "
+                "tidying-up, and the first colonial government was worse than the war."}],
+      [["Governor of Pánuco", "1527"], ["First Audiencia", "1528-1530"],
+       ["Recalled", "1537"]]),
 ]
 
 

@@ -487,6 +487,107 @@ RIVERS = {
     },
 }
 
+# ---------------------------------------------------------------------------
+# A2-c: the chinampa districts of the southern lakes (round 7)
+# ---------------------------------------------------------------------------
+# The raised-field zones that fed the Basin — the reason the freshwater lakes
+# mattered and the reason the dike of Nezahualcóyotl was built to keep the
+# saline water off them. Extents authored at visualization grade from Calnek
+# (1972) and the surviving chinampería at Xochimilco, whose canal grid is
+# still on the modern map and is the only piece of this system that can still
+# be measured. Confidence 'moderate' on extent, 'good' on existence.
+#
+# The extents are DERIVED, not drawn: a chinampa had to be built up from a lake
+# bed shallow enough to stand in, so each district is the lake's own shoreline
+# over a named span, offset inward by a stated width. That makes the assumption
+# explicit and auditable — change the width and the districts move honestly —
+# instead of burying it in a hand-drawn blob. Widths from the surviving
+# chinampería at Xochimilco (~2 km deep off the south shore) scaled by each
+# district's attested share of the system.
+#
+# SCALE CHECK, stated rather than fudged: these four come to ~56 km², against
+# Parsons' ~120 km² for the full Chalco-Xochimilco system. The gap is not a
+# claim that the system was smaller — it is the simplified lake. This model's
+# lake polygon is 124 km² where the real southern lakes were nearer 200 km², so
+# the districts occupy ~45% of their lake where the real ones occupied ~60% of
+# theirs. Widen the lake reconstruction and these widen with it, because they
+# are derived from it. Do not widen these alone to hit the literature number:
+# that would put chinampas in open water to make a total look right.
+CHINAMPA_SPANS = {
+    "chinampas-xochimilco": {
+        "label": "The chinampas of Xōchimīlco", "confidence": "moderate",
+        "note": "the largest district, and the only one still worked today — "
+                "its canal grid is on the modern map and is the measurement "
+                "the other three are scaled from",
+        "lon": (-99.128, -99.055), "width_km": 3.4,
+    },
+    "chinampas-cuitlahuac": {
+        "label": "The chinampas of Cuitláhuac", "confidence": "moderate",
+        "note": "worked off the causeway-island that split the fresh lakes",
+        "lon": (-99.038, -98.988), "width_km": 2.6,
+    },
+    "chinampas-mizquic": {
+        "label": "The chinampas of Mīzquic", "confidence": "moderate",
+        "note": "the southern margin, reached only by canoe",
+        "lon": (-98.978, -98.952), "width_km": 2.2,
+    },
+    "chinampas-chalco": {
+        "label": "The chinampas of Chālco", "confidence": "moderate",
+        "note": "the Basin's granary — and the district whose defection in "
+                "1521 cut Tenochtitlan's food before the siege lines closed",
+        "lon": (-98.944, -98.914), "width_km": 3.0,
+    },
+}
+
+
+def chinampa_zones():
+    """Build each district as a band of the southern lake's own south shore."""
+    lake = GEOMETRY["lake-xochimilco-chalco"]["points"]
+
+    def shore_at(lon):
+        """The south shore's latitude at this longitude — the LOWEST crossing of
+        a vertical ray through the lake outline. Exact, and immune to the
+        which-vertices-count-as-south question that a latitude threshold begs."""
+        ys = []
+        for i in range(len(lake)):
+            x0, y0 = lake[i]
+            x1, y1 = lake[(i + 1) % len(lake)]
+            if (x0 <= lon < x1) or (x1 <= lon < x0):
+                u = (lon - x0) / (x1 - x0)
+                ys.append(y0 + (y1 - y0) * u)
+        if not ys:
+            raise ValueError(
+                f"longitude {lon:.4f} misses Lake Xochimilco-Chalco entirely — "
+                "a chinampa span was authored past the end of the lake")
+        return min(ys), max(ys)
+
+    out = {}
+    for zid, z in CHINAMPA_SPANS.items():
+        a, b = z["lon"]
+        dlat = z["width_km"] / 111.0                 # inward (northward) offset
+        n = 9
+        # the very waterline was tule marsh, not field — the built ground starts
+        # a little out from it
+        MARSH = 0.0006                               # ~65 m of reed bed
+        lower = [(a + (b - a) * i / n, shore_at(a + (b - a) * i / n)[0] + MARSH)
+                 for i in range(n + 1)]
+        # the inner edge follows the shore but wanders: the district ended where
+        # the water got too deep to build in, which is not a parallel line. And
+        # it is clamped to the far shore — where the lake is narrower than the
+        # district would be, the lake wins and the district thins
+        upper = []
+        for i in range(n, -1, -1):
+            lon = a + (b - a) * i / n
+            s, nth = shore_at(lon)
+            taper = 0.62 + 0.38 * math.sin(math.pi * (i / n))   # thins at the ends
+            upper.append((lon, min(s + dlat * taper, nth - MARSH)))
+        out[zid] = {"label": z["label"], "confidence": z["confidence"],
+                    "note": z["note"], "points": lower + upper}
+    return out
+
+
+CHINAMPA_ZONES = {}        # filled below, once GEOMETRY is complete
+
 CAMPAN_LABELS = [
     ("Cuepopan", 19.4425, -99.1395), ("Atzacoalco", 19.4425, -99.1240),
     ("Moyotlan", 19.4270, -99.1395), ("Teopan", 19.4270, -99.1240),
@@ -645,6 +746,22 @@ def _selftest():
     for (lat, lon) in ((19.4348, -99.1318), (19.318, -98.238)):   # Tenochtitlan, Tlaxcala
         for name, g in SEAS.items():
             assert not point_in_polygon(lat, lon, g["points"]), f"{name} swallows {lat},{lon}"
+    # the chinampa districts: a raised field was built UP FROM A LAKE BED, so
+    # every one of them must lie in the water it was built in. This is the whole
+    # contract — a chinampa on dry ground is a category error, not a rounding one
+    lakepts = GEOMETRY["lake-xochimilco-chalco"]["points"]
+    assert CHINAMPA_ZONES, "chinampa zones were never built"
+    for zid, z in CHINAMPA_ZONES.items():
+        assert z["confidence"] in CONFIDENCE and z["note"], zid
+        for lon, lat in z["points"]:
+            assert point_in_polygon(lat, lon, lakepts), \
+                f"{zid}: ({lon:.4f}, {lat:.4f}) is not in Lake Xochimilco-Chalco"
+        a = polygon_area_km2(z["points"])
+        assert 3 < a < 90, f"{zid}: {a:.0f} km² is not a plausible district"
+    # and the four together must not exceed the lake that holds them
+    tot = sum(polygon_area_km2(z["points"]) for z in CHINAMPA_ZONES.values())
+    lk = polygon_area_km2(lakepts)
+    assert tot < lk * 0.55, f"chinampas cover {tot/lk:.0%} of the lake"
     # geometry helpers behave
     sq = [(-99.10, 19.40), (-99.00, 19.40), (-99.00, 19.50), (-99.10, 19.50)]
     a = polygon_area_km2(sq)
@@ -655,6 +772,9 @@ def _selftest():
         assert d < 0.3, f"{feat} vs {anchor}: {d*1000:.0f} m"
     print(f"selftest OK — {len(ANCHORS)} anchors, {len(GEOMETRY)} features; "
           f"max terminal residual {max(d for _, _, d in residuals_km())*1000:.0f} m")
+
+
+CHINAMPA_ZONES.update(chinampa_zones())
 
 
 if __name__ == "__main__":

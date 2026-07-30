@@ -848,6 +848,10 @@ def emit():
         "rivers": [{"id": k, "label": g["label"], "confidence": g["confidence"],
                     "note": g["note"], "points": g["points"]}
                    for k, g in georef.RIVERS.items()],
+        "chinampaZones": [{"id": k, "label": g["label"],
+                           "confidence": g["confidence"], "note": g["note"],
+                           "points": g["points"]}
+                          for k, g in georef.CHINAMPA_ZONES.items()],
         "features": [{"id": k, "kind": g["kind"], "closed": g["closed"],
                       "confidence": g["confidence"], "points": g["points"]}
                      for k, g in georef.GEOMETRY.items()]
@@ -868,7 +872,10 @@ def emit():
     total = sum(n for _, n in files)
     for p, n in files:
         print(f"  wrote {os.path.basename(p):16} {n/1024:7.1f} KB")
-    print(f"  total {total/1024:.1f} KB (budget: 25 MB — {total/(25*1024*1024)*100:.2f}% used)")
+    # SCOPE §10, amended round 7: 45 MB over the wire for the whole site. The
+    # data files are a rounding error in that — the basemaps are the budget.
+    print(f"  total {total/1024:.1f} KB (site budget: 45 MB — data is "
+          f"{total/(45*1024*1024)*100:.2f}% of it; the basemaps are the rest)")
     return files
 
 
