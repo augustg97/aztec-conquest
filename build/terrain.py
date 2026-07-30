@@ -70,8 +70,10 @@ def merc_xy(lon, lat, z):
     return x, y
 
 
-def fetch_tiles(view):
+def fetch_tiles(view, zoom=None):
     lon0, lat0, lon1, lat1, z, _ = VIEWS[view]
+    if zoom is not None:
+        z = zoom
     x0, y0 = merc_xy(lon0, lat1, z)          # top-left
     x1, y1 = merc_xy(lon1, lat0, z)          # bottom-right
     xs = range(int(x0), int(x1) + 1)
@@ -101,9 +103,9 @@ def fetch_tiles(view):
     return (int(x0), int(y0), int(x1), int(y1), z)
 
 
-def mosaic(view):
+def mosaic(view, zoom=None):
     """Elevation mosaic (float32 metres) + its mercator pixel origin."""
-    x0, y0, x1, y1, z = fetch_tiles(view)
+    x0, y0, x1, y1, z = fetch_tiles(view, zoom)
     W, H = (x1 - x0 + 1) * 256, (y1 - y0 + 1) * 256
     E = np.zeros((H, W), np.float32)
     for tx in range(x0, x1 + 1):
@@ -116,12 +118,14 @@ def mosaic(view):
     return E, x0, y0, z
 
 
-def sample_equirect(view):
+def sample_equirect(view, zoom=None):
     """Resample the mercator mosaic onto the app's plate-carrée grid."""
     lon0, lat0, lon1, lat1, z, W = VIEWS[view]
+    if zoom is not None:
+        z = zoom
     kx = math.cos(math.radians((lat0 + lat1) / 2.0))
     H = int(round(W * ((lat1 - lat0) * 110.6) / ((lon1 - lon0) * 111.32 * kx)))
-    E, mx0, my0, z = mosaic(view)
+    E, mx0, my0, z = mosaic(view, zoom)
     lons = np.linspace(lon0, lon1, W, dtype=np.float64)
     lats = np.linspace(lat1, lat0, H, dtype=np.float64)      # top row = north
     n = 2.0 ** z
@@ -170,6 +174,29 @@ OCEAN = [(-6500, (9, 20, 44)), (-4500, (13, 30, 60)), (-3000, (18, 42, 78)),
 
 def render(view):
     E, mpp = sample_equirect(view)
+    # NO-DATA IS NOT SEA LEVEL. Above z9 the terrarium tiles carry no
+    # bathymetry: every ocean pixel decodes to exactly 0.0 m, which the
+    # land/sea test (E >= 0) then painted as coastal LAND — the Gulf came out
+    # olive inside the corridor's footprint, 8% of that grid. Real land at
+    # exactly 0.000 m is vanishingly rare, so bit-exact zero is the no-data
+    # flag; those pixels take their depth from the z9 mosaic, which does carry
+    # ETOPO. Measured and reported rather than patched by eye.
+    nod = (E == 0.0)
+    frac = float(np.mean(nod))
+    if frac > 0.001:
+        Ez9, _ = sample_equirect(view, zoom=min(9, VIEWS[view][4]))
+        # The z9 grid is ~4x coarser than the level it is filling, so pasted
+        # raw it draws a staircase of terraces that reads as sea-floor
+        # structure. Smooth ONLY the filled region — the artifact is in the
+        # upsample, not in the data (TRAPS: quantisation reads as structure).
+        Ez9s = Ez9.astype(np.float32)
+        for _ in range(6):
+            Ez9s = (Ez9s + np.roll(Ez9s, 1, 0) + np.roll(Ez9s, -1, 0)
+                    + np.roll(Ez9s, 1, 1) + np.roll(Ez9s, -1, 1)) / 5.0
+        E = np.where(nod, Ez9s, E)
+        still = float(np.mean(E == 0.0))
+        print(f"  {view}: {frac*100:.1f}% no-data at z{VIEWS[view][4]} "
+              f"backfilled from z9 → {still*100:.1f}% remaining")
     gy, gx = np.gradient(E, mpp)
     # hillshade, sun from the NW at 45 degrees
     az, alt = math.radians(315), math.radians(45)

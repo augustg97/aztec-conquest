@@ -236,11 +236,19 @@ function sampleTerrain(id, img) {
                       mean: sum / (data.length / 4)};
 }
 
+/* Images must carry the data version too. The build stamps CSS, JS and data
+ * but NOT img/, so a re-rendered basemap reached a returning viewer as the
+ * OLD picture — the same silent staleness the deploy rules warn about, and it
+ * cost a full diagnosis loop when a fixed ocean still looked broken on screen
+ * while the file on disk was already correct. */
+const DV = (window.DATA && DATA.meta && DATA.meta.dataVersion) || 'dev';
+const bust = url => url + (url.indexOf('?') < 0 ? '?dv=' : '&dv=') + DV;
+
 function preloadTerrain() {
   for (const tr of TERRAIN) for (const s of ['dry', 'wet']) {
     const im = new Image();
     im.onload = () => { if (s === 'dry') sampleTerrain(tr.id, im); render(); };
-    im.src = `img/terrain-${tr.id}-${s}.jpg`;
+    im.src = bust(`img/terrain-${tr.id}-${s}.jpg`);
     TERRAIN_IMG[tr.id + '-' + s] = im;
   }
 }
@@ -396,7 +404,37 @@ function drawGroundDetail() {
       const smp = sampleGround(lon, lat);
       if (!smp) continue;
       const [R, G, B, meanLum] = smp;
-      if (B > G + 6) continue;                     // water, in any of its blues
+      if (B > G + 6) {
+        // WATER. The sea floor's relief is real ETOPO, but its grid runs out
+        // before the screen does — the same ceiling as the land. So sub-grid
+        // fabric is GROWN from the measured relief: lineation only where the
+        // floor is genuinely darker than its own neighbourhood (a slope, a
+        // scarp, a trench wall), aligned to a slowly-turning field. Flat
+        // abyss stays flat, which is the truth about it.
+        if (span > 0.9) continue;
+        let ws = 0, wn = 0;
+        for (const [dl, dt] of [[0.006, 0], [-0.006, 0], [0, 0.006], [0, -0.006]]) {
+          const nb = sampleGround(lon + dl, lat + dt);
+          if (nb) { ws += (nb[0] + nb[1] + nb[2]) / 3; wn++; }
+        }
+        const wl = (R + G + B) / 3;
+        const wLocal = wn ? (ws + wl) / (wn + 1) : wl;
+        const relief = Math.max(0, (wLocal - wl) / 9);
+        if (relief < 0.12 || rnd(s + 11) > Math.min(0.5, relief * 0.5)) continue;
+        const [wx, wy] = project(lon, lat);
+        if (wx < 0 || wy < 0 || wx > PROJ.W || wy > PROJ.H) continue;
+        const wa = (smoothNoise(lon, lat, 0.05) - 0.5) * 2.0 + 0.4;
+        const len = sz * (2.2 + rnd(s + 12) * 2.4);
+        ctx.strokeStyle = `rgba(${Math.max(6, R * 0.62) | 0},${Math.max(16, G * 0.66) | 0},` +
+                          `${Math.max(34, B * 0.72) | 0},` +
+                          `${Math.min(0.34, relief * 0.30).toFixed(3)})`;
+        ctx.lineWidth = Math.max(0.5, sz * 0.42);
+        ctx.beginPath();
+        ctx.moveTo(wx - Math.cos(wa) * len, wy - Math.sin(wa) * len);
+        ctx.lineTo(wx + Math.cos(wa) * len, wy + Math.sin(wa) * len);
+        ctx.stroke();
+        continue;
+      }
       if (fp && pointInPoly(lat, lon, fp)) continue;   // the island has its fabric
       const [x, y] = project(lon + (rnd(s) - 0.5) * step * 0.95,
                              lat + (rnd(s + 1) - 0.5) * step * 0.95);
@@ -2112,7 +2150,7 @@ function openCard(o) {
 
   let body = '';
   if (o.image) {
-    body += `<img class="cardimg" src="${esc(o.image.src)}" alt="">` +
+    body += `<img class="cardimg" src="${esc(bust(o.image.src))}" alt="">` +
             `<div class="imgcap">${esc(o.image.caption)}</div>` +
             `<div class="imgcredit">${esc(o.image.credit)}</div>`;
   }
