@@ -653,6 +653,245 @@ PEOPLE = [
                 "tidying-up, and the first colonial government was worse than the war."}],
       [["Governor of Pánuco", "1527"], ["First Audiencia", "1528-1530"],
        ["Recalled", "1537"]]),
+
+    # ------------------------------------------------------------------ #
+    # Round 8 tranche, completing B2-d at 40. Fills the three remaining    #
+    # holes: the years BEFORE 1519 (the model opens in 1502 and had        #
+    # almost nobody alive in it), the war's technicians and middle ranks   #
+    # rather than only its principals, and the missionary generation who   #
+    # made the record the later cards are written from.                    #
+    # ------------------------------------------------------------------ #
+
+    P("nezahualpilli", "Nezahualpilli",
+      "tlatoani of Tetzcohco — the reign the model opens inside",
+      (T0, _t(1515, 1, 1)), "moderate",
+      ["Alva Ixtlilxóchitl", "[DUR]", "[TH]"],
+      [{"from": T0, "to": _t(1515, 1, 1),
+        "text": "Son of Nezahualcóyotl and ruler of the alliance's second seat for more "
+                "than forty years: a lawgiver and astronomer in the Texcocan tradition, "
+                "and the one lord in the alliance with standing enough to refuse "
+                "Tenochtitlan. The model's first thirteen years are his."},
+       {"from": _t(1515, 1, 1), "to": _t(1519, 11, 8),
+        "text": "His death in 1515 opens the succession Tenochtitlan then interferes "
+                "with — Cacama installed with Moctezuma's backing, Ixtlilxóchitl taking "
+                "the north in arms, Coanacochtzin waiting. The Triple Alliance's second "
+                "seat is already broken four years before the strangers land, and that "
+                "fracture is the doorway the whole war walks through."},
+       {"from": _t(1519, 11, 8), "to": T1,
+        "text": "Remembered by his own descendants as the last ruler of an independent "
+                "Texcoco — the chronicler Alva Ixtlilxóchitl is writing about his own "
+                "great-great-grandfather, and it shows."}],
+      [["Rules", "1472-1515"], ["Seat", "Tetzcohco"],
+       ["Died", "1515 — the succession crisis begins"]],
+      note="the pre-war fracture in the alliance's second seat is the single most "
+           "consequential thing in this model that happened before 1519"),
+
+    P("teuhtlilli", "Teuhtlilli (Tendile)",
+      "Moctezuma's governor on the coast — the empire's eyes",
+      (_t(1519, 4, 1), _t(1519, 11, 8)), "moderate",
+      ["[BD]", "[C2]", "[FC]"],
+      [{"from": T0, "to": _t(1519, 4, 1),
+        "text": "A provincial governor in the Cuetlaxtlan district, running the tribute "
+                "and the road reports on the Gulf coast — one node in a standing "
+                "intelligence system that had already logged two Spanish voyages."},
+       {"from": _t(1519, 4, 1), "to": _t(1519, 11, 8),
+        "text": "Meets Cortés on the dunes within days of the landing, with food, gifts "
+                "and PAINTERS — men who drew the ships, the horses, the guns and the "
+                "faces, so that a report could be on the road to the capital in a week. "
+                "The relay covered roughly 400 km. Whatever else the empire lacked, it "
+                "was not information."},
+       {"from": _t(1519, 11, 8), "to": T1,
+        "text": "Vanishes from the record after the embassies. He matters because the "
+                "story is usually told as if the empire were surprised, and its first "
+                "act was to commission a drawing."}],
+      [["District", "the Gulf coast, Cuetlaxtlan"],
+       ["First contact", "April 1519"], ["Sent", "painters, and a running relay"]]),
+
+    P("tzihuacpopocatzin", "Tzihuacpopocatzin",
+      "the lord sent to be mistaken for Moctezuma",
+      (_t(1519, 9, 1), _t(1519, 11, 8)), "contested",
+      ["[FC]", "[TH]"],
+      [{"from": T0, "to": _t(1519, 9, 1),
+        "text": "A Mexica lord of the ruling house, otherwise unrecorded — one of the "
+                "great many people in this war whose lives survive only as a single "
+                "action in somebody else's account."},
+       {"from": _t(1519, 9, 1), "to": _t(1519, 11, 8),
+        "text": "Sent out to the advancing column and presented, in the Nahua telling, "
+                "as the huey tlatoani himself — a substitution meant either to test the "
+                "strangers' claim to know a god when they saw one, or simply to keep "
+                "the real ruler out of reach. It fails: the Tlaxcalteca in the column "
+                "know the difference and say so."},
+       {"from": _t(1519, 11, 8), "to": T1,
+        "text": "The episode is one of the few places the sources let you watch the "
+                "empire improvising — and it is recorded only by the losing side."}],
+      [["Sent", "autumn 1519, on the road"], ["Outcome", "recognised, and refused"]],
+      accounts=[
+        {"source": "Florentine Codex Bk XII [FC]",
+         "claim": "Moctezuma deliberately sent a double, and the deception was exposed by the Tlaxcalteca",
+         "note": "part of a sequence in Book XII that presents Moctezuma as increasingly desperate — a characterisation the same book has reasons to make"},
+        {"source": "the Spanish accounts",
+         "claim": "no substitution is described at all",
+         "note": "silence is not refutation, but the episode rests on one tradition and the model says so"},
+      ]),
+
+    P("coyohuehuetzin", "Coyohuehuetzin",
+      "tlacatecatl of Tlatelolco — the siege's field command",
+      (_t(1520, 7, 1), _t(1521, 8, 13)), "moderate",
+      ["[FC]", "[AT]"],
+      [{"from": T0, "to": _t(1520, 7, 1),
+        "text": "A Tlatelolca commander in the Mexica military hierarchy — the ranks "
+                "below the tlatoani that actually moved troops, and that the Spanish "
+                "accounts almost never name because they did not know them."},
+       {"from": _t(1520, 7, 1), "to": _t(1521, 8, 13),
+        "text": "Named repeatedly in Book XII and the Anales de Tlatelolco directing the "
+                "defence as the coalition compresses the city northward: the causeway "
+                "fighting, the barricades, the last quarter. When Tenochtitlan's "
+                "resistance collapses into Tlatelolco, the war is being run by men like "
+                "this one."},
+       {"from": _t(1521, 8, 13), "to": T1,
+        "text": "Among the lords who surrender with Cuauhtémoc. What follows is not "
+                "recorded, which is the ordinary fate of a name in these sources."}],
+      [["Rank", "tlacatecatl"], ["City", "Tlatelolco"],
+       ["Commands", "the northern defence, 1521"]]),
+
+    P("temilotzin", "Temilotzin",
+      "tlacatecatl and poet — a captain who left songs",
+      (_t(1520, 7, 1), _t(1525, 3, 1)), "moderate",
+      ["[FC]", "[AT]", "Cantares Mexicanos"],
+      [{"from": T0, "to": _t(1520, 7, 1),
+        "text": "A Tlatelolca lord and war captain of the generation that fought the "
+                "siege, and one of the very few in this model who is attested twice "
+                "over — once as a soldier in the annals, once as a voice in the "
+                "surviving Nahuatl song collections."},
+       {"from": _t(1520, 7, 1), "to": _t(1521, 8, 13),
+        "text": "Fights through the siege in the Tlatelolca command and is named among "
+                "the lords taken with Cuauhtémoc at the end."},
+       {"from": _t(1521, 8, 13), "to": T1,
+        "text": "Taken on the Honduras march with the other captive lords and dies on "
+                "it, in 1525 — by one account throwing himself into the water rather "
+                "than continue. A song attributed to him survives in the Cantares: 'I "
+                "have come to make friends here,' it begins, and it is the only thing in "
+                "this model that is a Mexica captain's own voice rather than a report of "
+                "one."}],
+      [["Rank", "tlacatecatl"], ["Attested in", "the annals and the Cantares"],
+       ["Died", "1525, on the Honduras march"]],
+      note="the attribution of the Cantares song is traditional rather than documentary"),
+
+    P("martin-lopez", "Martín López",
+      "shipwright — the man who built the thirteen brigantines",
+      (_t(1519, 2, 1), _t(1530, 1, 1)), "good",
+      ["[BD]", "[C3]", "his own probanza (1528-40)", "[TH]"],
+      [{"from": T0, "to": _t(1519, 2, 1),
+        "text": "A carpenter and shipwright out of Seville, in Cuba with the rest of the "
+                "expedition's tradesmen — the sort of person a conquest depends on and a "
+                "conquest narrative forgets."},
+       {"from": _t(1519, 2, 1), "to": _t(1521, 8, 13),
+        "text": "Builds the four brigantines used on the lake during the hostage year, "
+                "loses them when the city rises, and then does the thing the siege turns "
+                "on: cuts and frames thirteen more at Tlaxcala, 90 km away and 2,000 m "
+                "up, to be carried in pieces over the sierra by thousands of Tlaxcalteca "
+                "porters and assembled in a canal dug for the purpose. Without the "
+                "brigantines the lake belongs to the canoe fleet and the causeways cannot "
+                "be held."},
+       {"from": _t(1521, 8, 13), "to": T1,
+        "text": "Spends the next twenty years petitioning for reward, and the probanzas "
+                "he filed are now among the better sources for how the fleet was "
+                "actually built. He was paid badly, and complained in writing, which is "
+                "why we know anything."}],
+      [["Built", "4 brigantines 1520; 13 in 1521"],
+       ["Carried", "in pieces from Tlaxcala, ~90 km"],
+       ["Source", "his own reward petitions"]],
+      note="the single most decisive piece of engineering in the war, done by a "
+           "tradesman who had to sue to be noticed"),
+
+    P("andres-tapia", "Andrés de Tapia",
+      "captain, and one of the campaign's witnesses",
+      (_t(1519, 2, 1), _t(1540, 1, 1)), "moderate",
+      ["his Relación (c. 1539)", "[BD]", "[TH]"],
+      [{"from": T0, "to": _t(1519, 2, 1),
+        "text": "A young hidalgo who joins the expedition in Cuba and stays close to "
+                "Cortés throughout — one of the inner group rather than the ranks."},
+       {"from": _t(1519, 2, 1), "to": _t(1521, 8, 13),
+        "text": "Present at Cholula, in the city through the hostage months, and in the "
+                "siege. His short Relación is the source for some of the most-quoted "
+                "and least-corroborated scenes of the war, including the count of skulls "
+                "on the tzompantli — a number modern scholarship treats with great "
+                "caution and which this model does not repeat as fact."},
+       {"from": _t(1521, 8, 13), "to": T1,
+        "text": "Serves in the later campaigns and writes his account around 1539, "
+                "within the argument between Cortés's partisans and his critics. A "
+                "witness, and a partisan, and the model reads him as both."}],
+      [["Joins", "1519, Cuba"], ["Writes", "c. 1539"],
+       ["Known for", "the tzompantli count — treated with caution"]]),
+
+    P("motolinia", "Toribio de Benavente 'Motolinía'",
+      "one of the Twelve — the first Franciscan mission",
+      (_t(1524, 6, 1), T1), "good",
+      ["his Historia de los indios (c. 1541)", "[TH]"],
+      [{"from": T0, "to": _t(1524, 6, 1),
+        "text": "In Spain. The religious conquest has not begun: the first three years "
+                "after the fall are soldiers and encomenderos, not friars."},
+       {"from": _t(1524, 6, 1), "to": _t(1541, 1, 1),
+        "text": "Arrives with the Twelve in 1524 — a party that walked barefoot from the "
+                "coast, which the Nahua noticed and named him for: motolinía, 'he is "
+                "poor'. He takes the name and keeps it. Baptises on an industrial scale, "
+                "founds houses across the centre and the west, and writes the earliest "
+                "sustained account of what the conquest did to the people who survived "
+                "it — including the plagues, which he counted."},
+       {"from": _t(1541, 1, 1), "to": T1,
+        "text": "Ends up publicly opposing Las Casas, arguing that the conquest was "
+                "providential and the friars' work justified it. Two men who both "
+                "recorded the catastrophe drew opposite conclusions from it, and this "
+                "model carries both."}],
+      [["Arrives", "1524, with the Twelve"],
+       ["Named by", "the Nahua — 'he is poor'"], ["Writes", "c. 1541"]]),
+
+    P("pedro-de-gante", "Pedro de Gante",
+      "Franciscan lay brother — the school at San José",
+      (_t(1523, 8, 1), T1), "good",
+      ["[TH]", "his own letters"],
+      [{"from": T0, "to": _t(1523, 8, 1),
+        "text": "In Flanders. A lay brother, never ordained, and reportedly a relative "
+                "of the emperor Charles V — which did not stop him spending the rest of "
+                "his life in a school."},
+       {"from": _t(1523, 8, 1), "to": T1,
+        "text": "Arrives in 1523, a year ahead of the Twelve, and does the thing almost "
+                "none of the others did: learns Nahuatl properly and teaches in it. The "
+                "school he runs at San José de los Naturales trains Nahua boys in "
+                "reading, writing, singing, painting and the trades, and its graduates "
+                "are the scribes and artists who produce the codices, the catechisms and "
+                "eventually the Florentine Codex's illustrations. The Nahua record of "
+                "this war is written in an alphabet taught in his classroom."}],
+      [["Arrives", "1523"], ["Teaches in", "Nahuatl"],
+       ["School", "San José de los Naturales"],
+       ["Died", "1572, Mexico City"]],
+      note="the alphabetic Nahuatl that carries most of this model's indigenous "
+           "sources is a product of this mission-school generation"),
+
+    P("las-casas", "Bartolomé de las Casas",
+      "bishop and prosecutor of the conquest",
+      (_t(1502, 1, 1), T1), "good",
+      ["Brevísima relación (1552)", "Historia de las Indias", "[TH]"],
+      [{"from": T0, "to": _t(1514, 1, 1),
+        "text": "In the Caribbean from 1502 as a settler and encomendero, holding "
+                "labourers of his own on Hispaniola and Cuba — he begins on the side he "
+                "spends the rest of his life prosecuting."},
+       {"from": _t(1514, 1, 1), "to": _t(1542, 1, 1),
+        "text": "Renounces his encomienda in 1514 and becomes the system's most "
+                "relentless opponent: decades of petitioning, the Dominican habit, "
+                "failed experiments in peaceful colonisation, and the case that drives "
+                "the New Laws of 1542. His statistics are polemical and were attacked as "
+                "such immediately; his central charge — that the encomienda was killing "
+                "people at scale — was correct."},
+       {"from": _t(1542, 1, 1), "to": T1,
+        "text": "Bishop of Chiapas from 1544, where the colonists refuse him the "
+                "sacraments' authority and he leaves. The Brevísima relación is printed "
+                "in 1552, just past this model's window, and becomes both the conscience "
+                "of the empire and the raw material of its rivals' propaganda."}],
+      [["In the Indies", "from 1502"], ["Renounces encomienda", "1514"],
+       ["Bishop of Chiapas", "1544"], ["Prints the Brevísima", "1552"]],
+      note="his numbers are contested and his indictment is not — the model uses him "
+           "for the charge, not for the arithmetic"),
 ]
 
 

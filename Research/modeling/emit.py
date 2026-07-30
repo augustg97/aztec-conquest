@@ -462,6 +462,34 @@ def build_events_js():
 # uses one — an image without its credit is an audit failure.
 _C = "public domain, via Wikimedia Commons"
 IMAGES = {
+    "toxcatl": {"src": "img/cards/toxcatl.jpg",
+                "caption": "The Tóxcatl massacre in the walled precinct: the drum, the "
+                           "dancers, and Alvarado's men in the gateways",
+                "credit": f"16th-c. codex image, {_C}"},
+    "siege-painting": {"src": "img/cards/siege-painting.jpg",
+                       "caption": "The assault on the causeway and the temple — painted "
+                                  "c. 1696, 175 years after the event and from the "
+                                  "victors' side",
+                       "credit": f"'Conquista de México' series, {_C}"},
+    "malintzin": {"src": "img/cards/malintzin.jpg",
+                  "caption": "Durán Codex, 1576: Malintzin stands between the ship and "
+                             "the Spanish party, labelled 'marina' beside 'marques' — "
+                             "the interpreter drawn as the centre of the exchange",
+                  "credit": f"Durán, Historia de las Indias, {_C}"},
+    "cuauhtemoc": {"src": "img/cards/cuauhtemoc.jpg",
+                   "caption": "The capture of Cuauhtémoc on the lake, 13 August 1521 — "
+                              "the event that ends the siege, not a portrait of the man; "
+                              "no likeness from life survives",
+                   "credit": f"'Conquista de México' series, c. 1696, {_C}"},
+    "ring-closes": {"src": "img/cards/ring-closes.jpg",
+                    "caption": "The ring closing on the island: the causeway camps and "
+                               "the brigantines, in a late-17th-c. retelling",
+                    "credit": f"'Conquista de México' series, {_C}"},
+    "fc-siege": {"src": "img/cards/fc-siege.jpg",
+                 "caption": "Book XII, fol. 67v: captured Spaniards and their allies "
+                            "sacrificed at Colhuacatonco during the siege — the war "
+                            "drawn by the Nahua artists who survived it",
+                 "credit": f"Florentine Codex, {_C}"},
     "map-1524": {"src": "img/cards/map-1524.jpg",
                  "caption": "The 1524 Nuremberg woodcut: Tenochtitlan as Europe first saw it "
                             "— schematic (best-fit residual 2.2 km), west at top",
@@ -509,18 +537,50 @@ CHAPTER_IMAGE = {"The Fifth Sun": "mendoza-founding", "Landfall": "lienzo-meetin
                  "The hostage regime": "moctezuma", "Rupture": "noche-triste",
                  "The plague year": "fc-smallpox", "The siege": "map-1524",
                  "The world remade": "mendoza-tribute",
-                 "Conquistador New Spain": "cortes", "Viceroyalty": "uppsala-map"}
+                 "Conquistador New Spain": "cortes", "Viceroyalty": "uppsala-map",
+                 "The ring closes": "ring-closes"}
 ENTITY_IMAGE = {"cholula-massacre": "lienzo-cholula", "tlaxcala-alliance": "lienzo-meeting",
                 "entry-tenochtitlan": "moctezuma", "moctezuma-dies": "moctezuma",
                 "noche-triste": "noche-triste", "smallpox-basin": "fc-smallpox",
                 "fall-tenochtitlan": "map-1524", "codex-mendoza-made": "mendoza-tribute",
                 "congregacion-1550": "uppsala-map",
                 "person-moctezuma-ii": "moctezuma", "person-cortes": "cortes",
-                "person-malintzin": "lienzo-meeting", "city-footprint": "map-1524"}
+                "person-malintzin": "malintzin", "city-footprint": "map-1524",
+                "toxcatl": "toxcatl", "person-cuauhtemoc": "cuauhtemoc",
+                "siege-camps": "siege-painting", "tlatelolco-ambush": "fc-siege"}
 
 # In-app update log — written for a reader, not a changelog: the effect first,
 # the number as evidence. Rendered in the About panel.
 UPDATES = [
+    {"version": "2.5", "date": "30 July 2026",
+     "title": "Forty people, and the pictures that were missing",
+     "summary": "The cast now runs from 1502 rather than starting at the "
+                "landing, and reaches past the principals to the people who "
+                "actually did the work. Six illustrations that earlier rounds "
+                "had failed to find are in — including the one chapter that "
+                "had never had a picture.",
+     "items": [
+         "Ten more people, to forty. The model opened in 1502 with almost "
+         "nobody alive in it; Nezahualpilli now holds the first thirteen years, "
+         "and the Texcoco succession crisis his death opens is the fracture the "
+         "whole war later walks through.",
+         "Martín López, the shipwright, has a card. He cut thirteen brigantines "
+         "at Tlaxcala, ninety kilometres away and two thousand metres up, to be "
+         "carried over the sierra in pieces — the single most decisive piece of "
+         "engineering in the war, done by a tradesman who then had to petition "
+         "for twenty years to be paid.",
+         "Teuhtlilli, who met the landing party with food, gifts and painters, "
+         "so a drawing of the ships was on the road to the capital within a "
+         "week. The empire's first act was to commission a picture.",
+         "Six images that previous rounds recorded as failures are in: the "
+         "Tóxcatl massacre, the siege, Malintzin interpreting in the Durán "
+         "Codex, Cuauhtémoc's capture on the water, a Book XII war plate, and "
+         "the ring-closes chapter, which had never had one. All sixteen "
+         "pictures in the model are now licence-checked and eye-checked, and "
+         "each is pinned to an exact source file rather than to a search.",
+         "Cuauhtémoc's card shows his capture, not his face. No likeness of him "
+         "from life survives, and the caption says so.",
+     ]},
     {"version": "2.4", "date": "30 July 2026",
      "title": "The chinampas, and a war that could go backwards",
      "summary": "The southern lakes get the thing they existed for: four "

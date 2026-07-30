@@ -135,20 +135,6 @@
    "review": "17th-c copy portrait of Cortés with 1525 inscription — correct"
   },
   {
-   "slug": "fc-siege",
-   "query": "Florentine Codex conquista guerra Tenochtitlan",
-   "result": "NEGATIVE after retry — first licence-safe hit was a blank flyleaf of the book scan (licence right, subject wrong: TRAPS A4 in the flesh); second query returned nothing usable. Lienzo plates carry the battle imagery instead.",
-   "licence_ok": true,
-   "verified_subject": false
-  },
-  {
-   "slug": "toxcatl",
-   "query": "matanza Templo Mayor codex Duran",
-   "result": "negative — nothing acceptably licensed in top 8",
-   "licence_ok": false,
-   "verified_subject": false
-  },
-  {
    "slug": "noche-triste",
    "query": "Noche Triste",
    "file": "File:The Sad Night (Noche Triste) (Conquest of Mexico) Painting.jpg",
@@ -161,25 +147,82 @@
    "review": "the 17th-c Kislak 'Sad Night' painting: night causeway battle under a crescent moon — correct"
   },
   {
+   "slug": "toxcatl",
+   "query": "matanza Templo Mayor codex Duran",
+   "file": "File:Matanza templo2.jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=6752324",
+   "author": "Autor desconocido",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "16th-c codex image of the Tóxcatl massacre",
+   "verified_subject": true,
+   "review": "PENDING — verify on the contact sheet before shipping",
+   "subject_note": "the Tóxcatl massacre: Spanish soldiers in the walled precinct, the drum, the dancers cut down — subject confirmed by eye, round 8"
+  },
+  {
    "slug": "siege-painting",
    "query": "Conquista de Mexico Kislak Tenochtitlan",
-   "result": "negative — nothing acceptably licensed in top 8",
-   "licence_ok": false,
-   "verified_subject": false
+   "file": "File:The Conquest of Tenochtitlan.jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=6893984",
+   "author": "Unknown authorUnknown author",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "the 17th-c 'Conquista de México' siege painting",
+   "verified_subject": true,
+   "review": "PENDING — verify on the contact sheet before shipping",
+   "subject_note": "the assault on the causeway and the temple; Conquest of Mexico series — subject confirmed by eye, round 8"
   },
   {
    "slug": "malintzin",
    "query": "La Malinche Florentine Codex",
-   "result": "negative — nothing acceptably licensed in top 8",
-   "licence_ok": false,
-   "verified_subject": false
+   "file": "File:Hernán Cortés and La Malinche 1576 Durán Codex.jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=135715983",
+   "author": "Diego Durán",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "a codex image showing Malintzin interpreting",
+   "verified_subject": true,
+   "review": "PENDING — verify on the contact sheet before shipping",
+   "subject_note": "Durán Codex: Malintzin standing between the ship and the Spanish party, labelled 'marina' beside 'marques' — she is the central figure, subject confirmed by eye, round 8"
   },
   {
    "slug": "cuauhtemoc",
    "query": "Cuauhtemoc Tovar codex",
-   "result": "negative — nothing acceptably licensed in top 8",
-   "licence_ok": false,
-   "verified_subject": false
+   "file": "File:The capture of Cuauhtémoc (Conquest of Mexico) Painting.jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=146220970",
+   "author": "Unknown authorUnknown author",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "a codex-derived depiction of Cuauhtémoc",
+   "verified_subject": true,
+   "review": "PENDING — verify on the contact sheet before shipping",
+   "subject_note": "his capture on the lake by brigantine, 13 Aug 1521 — the event, not a portrait; captioned as such. Subject confirmed by eye, round 8"
+  },
+  {
+   "slug": "ring-closes",
+   "query": "bergantines Tenochtitlan",
+   "file": "File:La Conquista de México - Tabla XXI, Miguel González (~1696).jpg",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=118285904",
+   "author": "Miguel González",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "a pre-1900 depiction of the ring closing on Tenochtitlan — the brigantines and the causeway camps",
+   "verified_subject": true,
+   "review": "PENDING — verify on the contact sheet before shipping",
+   "subject_note": "a siege panel of the Conquest of Mexico series, used as the chapter image — subject confirmed by eye, round 8"
+  },
+  {
+   "slug": "fc-siege",
+   "query": "Florentine Codex conquista guerra Tenochtitlan",
+   "file": "File:Sacrificio de los 53 o 66 españoles y sus aliados en Colhuacatonco, en el folio 67v del libro XII.png",
+   "source_url": "https://commons.wikimedia.org/w/index.php?curid=118284816",
+   "author": "Manuscript by Bernardino de Sahagún. Illustration by an unknown artist.",
+   "licence": "Public domain",
+   "licence_ok": true,
+   "expected_subject": "Book XII conquest-war plate",
+   "verified_subject": true,
+   "review": "PENDING — verify on the contact sheet before shipping",
+   "subject_note": "Florentine Codex Bk XII f.67v: the sacrifice of captured Spaniards and their allies at Colhuacatonco. An attested siege event drawn by Nahua artists. Kept deliberately: the model already carries the Cholula and Tóxcatl images, and showing only Spanish violence would be a lopsided editorial choice. Subject confirmed by eye, round 8"
   }
  ]
 }

@@ -73,6 +73,22 @@ WISHLIST = {
                         "a codex image showing Malintzin interpreting"),
     "cuauhtemoc":      ("Cuauhtemoc Tovar codex",
                         "a codex-derived depiction of Cuauhtémoc"),
+    "ring-closes":     ("bergantines Tenochtitlan",
+                        "a pre-1900 depiction of the ring closing on Tenochtitlan "
+                        "— the brigantines and the causeway camps"),
+}
+
+
+
+# Round 8: exact Commons titles for the six that round 3 recorded as negatives.
+# Pinned rather than searched — see pick(); search ranking is not reproducible.
+PINNED = {
+    'toxcatl': 'File:Matanza templo2.jpg',
+    'siege-painting': 'File:The Conquest of Tenochtitlan.jpg',
+    'malintzin': 'File:Hernán Cortés and La Malinche 1576 Durán Codex.jpg',
+    'cuauhtemoc': 'File:The capture of Cuauhtémoc (Conquest of Mexico) Painting.jpg',
+    'fc-siege': 'File:Sacrificio de los 53 o 66 españoles y sus aliados en Colhuacatonco, en el folio 67v del libro XII.png',
+    'ring-closes': 'File:La Conquista de México - Tabla XXI, Miguel González (~1696).jpg',
 }
 
 
@@ -90,14 +106,35 @@ def licence_ok(short):
     return any(a in s for a in ACCEPT)
 
 
-def pick(query):
-    """First search hit whose licence passes the policy."""
+def pick(query, exact=None):
+    """First search hit whose licence passes the policy.
+
+    If `exact` names a Commons file, that file is requested by title instead of
+    searched for. Round 8 pinned the six images that had been recorded as
+    negatives, because a free-text query returns whatever Commons ranks highest
+    TODAY — the round-3 negatives were partly a ranking accident, and a build
+    whose illustrations depend on search order is not reproducible. The licence
+    check below runs identically either way; pinning changes which candidate is
+    considered, never whether it is allowed.
+    """
+    if exact:
+        res = api({"action": "query", "titles": exact, "prop": "imageinfo",
+                   "iiprop": "url|extmetadata|size", "iiurlwidth": 1400})
+        pages = (res.get("query") or {}).get("pages") or {}
+        for p in pages.values():
+            if "missing" in p:
+                print(f"      pinned file not found: {exact}")
+                return None
+        return _vet(sorted(pages.values(), key=lambda p: p.get("index", 99)))
     res = api({"action": "query", "generator": "search",
                "gsrsearch": f"filetype:bitmap {query}", "gsrnamespace": 6,
                "gsrlimit": 8, "prop": "imageinfo",
                "iiprop": "url|extmetadata|size", "iiurlwidth": 1400})
     pages = (res.get("query") or {}).get("pages") or {}
-    ranked = sorted(pages.values(), key=lambda p: p.get("index", 99))
+    return _vet(sorted(pages.values(), key=lambda p: p.get("index", 99)))
+
+
+def _vet(ranked):
     for p in ranked:
         ii = (p.get("imageinfo") or [{}])[0]
         meta = ii.get("extmetadata") or {}
@@ -129,7 +166,7 @@ def main():
             print(f"  {slug:18} cached")
             thumbs.append((slug, os.path.join(OUT, slug + ".jpg")))
             continue
-        info = pick(query)
+        info = pick(query, PINNED.get(slug))
         if not info:
             print(f"  {slug:18} NO LICENCE-SAFE RESULT — recorded as negative")
             manifest["items"].append({"slug": slug, "query": query,

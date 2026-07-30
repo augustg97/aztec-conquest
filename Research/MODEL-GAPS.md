@@ -60,7 +60,7 @@ mechanisms, and added people/events/goods depth.*
 | B2 | P1 | Allegiance state machine | `allegiance.py` | **DELIVERED** — 75 timelines, 228 transitions, all legal; selftest asserts the coalition shape (mid-siege: 27 allied + 12 occupied vs 3 contested + 0 core) |
 | B2-b | P3 | Page/folio-level citation pinning for event dates and force claims (currently source families + modern chronologies [TH][HAS]) | `events.py`, `forces.py` | open |
 | B2-c | P4 | Mexica counter-diplomacy reversions (towns briefly regained 1520-21) — deliberately excluded from round 1 | `allegiance.py` | **IMPLEMENTED round 7** — reversion transitions added; Chalco runs the full cycle |
-| B2-d | P2 | Events catalogue: 64 events vs SCOPE's ~90 target; people cards (~40) not yet authored | `events.py`, `people.py` | events done (90); people **18 → 30** round 7; ~10 short of target |
+| B2-d | P2 | Events catalogue: 64 events vs SCOPE's ~90 target; people cards (~40) not yet authored | `events.py`, `people.py` | **CLOSED round 8** — events 90, people **40** |
 
 ## C. The card system
 
@@ -196,11 +196,31 @@ re-litigate):
   back through the console (`/cpx - 7/.test(String(drawChinampas))`), not by looking harder at
   the picture. This is the third appearance of this trap.
 
-**Count: 4 open items — 0 at P1.**
+**Round 8 — the rest of the register:**
+
+| # | outcome |
+|---|---|
+| **B2-d** | **CLOSED at 40 people.** The round-8 tranche fills the three holes the list still had: the years BEFORE 1519 (the model opens in 1502 and had almost nobody alive in it — Nezahualpilli's reign and the Texcoco succession crisis that is the doorway the whole war walks through), the war's technicians and middle ranks rather than only its principals (Martín López, who cut thirteen brigantines at Tlaxcala and had to sue to be noticed; Coyohuehuetzin and Temilotzin, the Tlatelolca field command), and the missionary generation whose classroom produced the alphabetic Nahuatl most of this model's indigenous sources are written in |
+| **Images** | **ALL 5 NEGATIVES CLEARED, plus the missing chapter image.** Every one of the round-3 negatives was partly a *ranking* accident: `pick()` took the first licence-safe hit in the top 8 of a free-text query, and the right file was simply ranked lower. All six are now **pinned by exact Commons title** — a build whose illustrations depend on today's search order is not reproducible. 16/16 images licence-safe and subject-verified; **all 10 chapters illustrated** (ring-closes was the last gap) |
+| Image audit (new) | **`check_image_targets`** — every image the emitter assigns must land on something that exists. Added after two `ENTITY_IMAGE` keys named events that did not exist; nothing failed, the lookup just missed and the cards shipped without pictures. Orphans are **HIGH**, assigned-but-not-delivered is MED |
+| Anachronism exemptions (new) | The term table is calibrated to *this model's territory*: "encomienda" is barred before 1521.6 because that is when the institution reaches Mexico. Las Casas's 1502-1514 Caribbean years are the one card legitimately outside that, so a **narrow, reasoned, per-card exemption list** now exists — and a **stale exemption is itself reported**, so the list cannot quietly rot |
+
+**Honest corrections recorded this round:**
+
+- `fc-siege`'s first pinned title was one I had **read off a truncated probe line**, so it 404'd.
+  The corrected file is the Book XII sacrifice plate at Colhuacatonco — kept deliberately: the
+  model already carries the Cholula and Tóxcatl massacre images, and showing only Spanish
+  violence would be a lopsided editorial choice about whose is depicted.
+- `cuauhtemoc`'s image is his **capture on the lake, not a portrait** — no likeness from life
+  survives. The caption says so rather than letting a crowded battle scene imply a likeness.
+- A scripted edit applied a selftest injection **twice**, once inside `run()`, so the synthetic
+  orphan leaked into the real audit and the gate refused to publish. Correct behaviour from the
+  gate; the fix was to stop mutating the live emitter at all and **inject the mapping** instead.
+- Chimalpahin was rejected again on the same rule as round 7 (born 1579, outside the window).
+
+**Count: 3 open items — 0 at P1.**
 
 1. **A2-b-rest** consult González Aparicio (1973) in facsimile and trace properly (no
    licence-safe digital scan surfaced; likely a library visit). **Cannot be done from here.**
-2. **B2-d-rest** people 30 → ~40; retry the 5 recorded image negatives; ring-closes chapter
-   image.
-3. **B2-b** page/folio-level citation pinning for event dates and force claims.
-4. Polish: basin/meso zoom seam.
+2. **B2-b** page/folio-level citation pinning for event dates and force claims.
+3. Polish: basin/meso zoom seam.

@@ -35,9 +35,25 @@ STAGED = os.path.join(HERE, "..", "research reports", "staged-artifacts")
 STATES = {"alliance-core", "tributary", "independent", "rival", "contested",
           "allied-coalition", "occupied", "colonial-ally", "new-spain", "spanish"}
 
-# term -> first t at which it may appear inside an era/event window
+# term -> first t at which it may appear inside an era/event window.
+# These dates are calibrated to THIS MODEL'S TERRITORY, not to the word's first
+# use anywhere: "encomienda" is barred before 1521.6 because that is when the
+# institution reaches Mexico, though the word is Caribbean from 1503.
 ANACHRONISMS = {"New Spain": 1520.8, "Mexico City": 1521.6, "viceroy": 1535.8,
                 "Viceroy": 1535.8, "encomienda": 1521.6}
+
+# The narrow, documented exceptions: (term, owner) pairs where the card is
+# legitimately outside the model's territory and the territorial date does not
+# apply. Each needs a reason, and the list stays SHORT — an exemption that grows
+# is an audit that has stopped working. Fires as a LOW if the exemption is
+# stale (the term is no longer in that card), so dead entries get cleaned up.
+ANACHRONISM_EXEMPT = {
+    ("encomienda", "person-las-casas"):
+        "his 1502-1514 years are in the Caribbean, where the encomienda dates "
+        "from Ovando's grants of 1503 — he held one on Hispaniola and Cuba "
+        "before New Spain existed, and renouncing it in 1514 is the hinge of "
+        "his life. The model's territorial date of 1521.6 is about Mexico.",
+}
 BANNED = ("Aztec", "Montezuma")     # house orthography and naming rules
 
 
@@ -144,14 +160,25 @@ def _texts_with_windows(sub):
 
 
 def check_anachronism(sub, F):
+    used_exemptions = set()
     for owner, t_from, text in _texts_with_windows(sub):
         for term, not_before in ANACHRONISMS.items():
             if term in text and t_from < not_before - 1e-6:
+                if (term, owner) in ANACHRONISM_EXEMPT:
+                    used_exemptions.add((term, owner))
+                    continue
                 F("MED", "anachronism", owner,
                   f"'{term}' inside a window opening {t_from:.2f} (term exists from {not_before})")
         for term in BANNED:
             if term in text:
                 F("MED", "naming", owner, f"'{term}' in model text (allowed only in About)")
+
+    # An exemption that no longer suppresses anything is dead weight, and dead
+    # weight in an audit is how audits stop working. Report it so it gets removed.
+    for (term, owner), _why in ANACHRONISM_EXEMPT.items():
+        if (term, owner) not in used_exemptions:
+            F("LOW", "audit-hygiene", owner,
+              f"stale anachronism exemption for '{term}' — nothing suppressed; delete it")
 
 
 def check_images(sub, F):
@@ -174,7 +201,38 @@ def check_images(sub, F):
                                        f"illustrated (< 8)")
 
 
-CHECKS = [check_tiling, check_chapters, check_contested, check_sources,
+
+def check_image_targets(sub, F):
+    """Every image the emitter assigns must land on something that exists.
+
+    Added round 8 after two ENTITY_IMAGE keys ('toxcatl-massacre', 'siege-begins')
+    named events that were really 'toxcatl' and 'siege-camps'. Nothing failed: the
+    dict lookup simply missed and the card shipped without its picture. A silent
+    drop is the worst kind of defect because the artifact looks finished, so the
+    orphan is now HIGH — the emitter is asserting a link that is not there.
+    """
+    known = {e["id"] for e in sub["entities"]} | {ev["id"] for ev in sub["events"]}
+    seen_with_image = {e["id"] for e in sub["entities"] if e.get("image")}
+    seen_with_image |= {ev["id"] for ev in sub["events"] if ev.get("image")}
+    if "_image_map" in sub:                     # selftest injects; never mutates the emitter
+        assigned = set(sub["_image_map"])
+    else:
+        try:
+            sys.path.insert(0, HERE)
+            import emit as _emit
+            assigned = set(_emit.ENTITY_IMAGE)
+        except Exception as e:                  # unimportable: say so, do not pass silently
+            F("LOW", "image-targets", "emit.py", f"could not read ENTITY_IMAGE ({e})")
+            return
+    for owner in sorted(assigned - known):
+        F("HIGH", "image-targets", owner,
+          "an image is assigned to this id, but no entity or event has it")
+    for owner in sorted(assigned & known - seen_with_image):
+        F("MED", "image-targets", owner,
+          "assigned an image that did not reach the card")
+
+
+CHECKS = [check_image_targets, check_tiling, check_chapters, check_contested, check_sources,
           check_allegiance, check_dates, check_anachronism, check_images]
 
 
@@ -210,21 +268,34 @@ def _selftest():
             {"id": "e1", "t": 1.0, "precision": "day", "confidence": "contested",
              "accounts": [], "sources": ["s"], "text": "New Spain rises",   # anachronism at t=1!
              "facts": [["Date (Julian)", "x"]]},                            # no Nahua fact!
+            {"id": "e2", "t": 1.0, "precision": "month", "confidence": "good",
+             "accounts": [], "sources": ["s"], "text": "New Spain rises",   # SAME anachronism...
+             "facts": [["Date (Julian)", "x"]]},                            # ...but exempted below
         ],
     }
+    # prove the exemption path: e2 carries the same anachronism as e1 and must
+    # NOT be reported, while the unused real exemption must be flagged stale
+    ANACHRONISM_EXEMPT[("New Spain", "e2")] = "synthetic, to prove the path"
     findings = []
 
     def F(sev, check, what, detail):
         findings.append({"severity": sev, "check": check, "what": what, "detail": detail})
 
+    sub["_image_map"] = {"no-such-entity": "whatever"}   # prove the orphan branch
     for c in CHECKS:
         c(sub, F)
     got = {(f["check"], f["what"]) for f in findings}
     expect = {("chapters", "a"), ("tiling", "bad"), ("contested", "bad"),
               ("contested", "e1"), ("sources", "bad"), ("allegiance", "bad"),
-              ("dates", "e1"), ("anachronism", "e1"), ("images", "chapter:a")}
+              ("dates", "e1"), ("anachronism", "e1"), ("images", "chapter:a"),
+              ("image-targets", "no-such-entity")}
     missing = expect - got
     assert not missing, f"selftest: checks failed to fire: {missing}"
+    assert ("anachronism", "e2") not in got, \
+        "selftest: the anachronism exemption did not suppress"
+    assert any(c == "audit-hygiene" for c, _ in got), \
+        "selftest: a stale anachronism exemption was not reported"
+    del ANACHRONISM_EXEMPT[("New Spain", "e2")]
     print(f"selftest OK — all {len(CHECKS)} checks fire on synthetic defects "
           f"({len(findings)} findings on the synthetic input)")
 
